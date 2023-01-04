@@ -133,6 +133,54 @@
             {
               "cards": [[7, "Spade"], [5, "Heart"], [7, "Club"], [7, "Club"], [3, "Heart"]],
               "type": "FullHouse"
+            },
+            {
+              "cards": [[15, "Joker"], [15, "Joker"], [7, "Club"], [7, "Spade"], [7, "Heart"], [5, "Heart"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[4, "Heart"], [5, "Heart"], [4, "Heart"], [12, "Diamond"], [12, "Spade"], [5, "Heart"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[4, "Heart"], [5, "Heart"], [4, "Heart"], [3, "Diamond"], [3, "Spade"], [5, "Heart"]],
+              "type": "Plate"
+            },
+            {
+              "cards": [[3, "Club"], [2, "Diamond"], [2, "Heart"], [3, "Spade"], [3, "Diamond"], [2, "Club"]],
+              "type": "Plate"
+            },
+            {
+              "cards": [[13, "Club"], [13, "Diamond"], [12, "Heart"], [5, "Club"], [5, "Spade"], [5, "Diamond"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[3, "Spade"], [3, "Spade"], [3, "Heart"], [5, "Heart"], [4, "Heart"], [4, "Diamond"]],
+              "type": "Plate"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Club"], [1, "Heart"], [2, "Spade"], [2, "Heart"], [2, "Diamond"]],
+              "type": "Plate"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Club"], [1, "Heart"], [13, "Spade"], [13, "Heart"], [13, "Diamond"]],
+              "type": "Plate"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Club"], [5, "Heart"], [2, "Spade"], [2, "Heart"], [2, "Diamond"]],
+              "type": "Plate"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Club"], [1, "Heart"], [5, "Heart"], [13, "Heart"], [13, "Diamond"]],
+              "type": "Plate"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Club"], [1, "Heart"], [5, "Heart"], [2, "Heart"], [2, "Diamond"]],
+              "type": "Plate"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Club"], [5, "Heart"], [5, "Heart"], [2, "Heart"], [2, "Diamond"]],
+              "type": "Plate"
             }
           ]
 }

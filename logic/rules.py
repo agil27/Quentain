@@ -12,6 +12,10 @@ class Card:
     def __init__(self, number, color, level):
         # Jack, Queen, King, Ace, Black Joker, Red Joker <==> 11, 12, 13, 14, 15, 16
         assert isinstance(number, int) and 1 <= number <= 16
+
+        # for special case of Ace
+        # A, 2, 3, 4, 5 and 10, J, Q, K, A is both acceptable
+        self.raw_number = number
         if number == 1:
             # ace
             number = 14
@@ -163,11 +167,7 @@ class Pair(CardComp):
         whether = (cards[0].equals(cards[1]) or level_cond0 or level_cond1)
         if not whether:
             return False, None
-        if level_cond1 and not level_cond0:
-            cards[1].number = cards[0].number
-        elif level_cond0 and not level_cond1:
-            cards[0].number = cards[1].number
-        return True, cards
+        return True, sorted(cards)
 
     @staticmethod
     def is_bomb():
@@ -348,14 +348,20 @@ class Plate(CardComp):
             # check 3 + 3
             whether_triple1, triple_cards1 = Triple.satisfy(sorted_cards[:3])
             whether_triple2, triple_cards2 = Triple.satisfy(sorted_cards[3:])
-            if whether_triple1 and whether_triple2 and triple_cards1[0].number + 1 == triple_cards2[0].number:
-                return True, triple_cards1 + triple_cards2
+            if whether_triple1 and whether_triple2:
+                if triple_cards1[0].number + 1 == triple_cards2[0].number:
+                    return True, triple_cards1 + triple_cards2
+                # special case of Ace
+                if triple_cards1[0].number == 2 and triple_cards2[0].number == 14:
+                    for i in range(3):
+                        triple_cards2[i].number = 1
+                    return True, triple_cards1 + triple_cards2
             # otherwise
             return False, None
 
         # at least 1 wild card
         # check fullhouse first
-        whether, fullhouse = FullHouse.satisfy(sorted_cards)
+        whether, fullhouse = FullHouse.satisfy(sorted_cards[:-1])
 
         # there will be at most 1 wildcard in this fullhouse
         # so we can always check the first number in the triple
@@ -363,19 +369,19 @@ class Plate(CardComp):
         if whether:
             triple, pair = fullhouse[:3], fullhouse[3:]
             if triple[0].number + 1 == pair[0].number:
-                return True, triple + pair + [pair[0].clone()]
+                return True, triple + pair + [sorted_cards[-1]]
             if triple[0].number - 1 == pair[0].number:
-                return True, pair + [pair[0].clone()] + triple
+                return True, pair + [sorted_cards[-1]] + triple
+            # treat special case of Ace
+            if triple[0].number == 14 and pair[0].number == 2:
+                triple[0].number = 1
+                return True, triple + pair + [sorted_cards[-1]]
+            if triple[0].number == 2 and pair[0].number == 14:
+                pair[0].number = 1
+                return True, pair + [sorted_cards[-1]] + triple
         # otherwise
         return False, None
 
     @staticmethod
     def is_bomb():
         return False
-
-
-
-
-
-
-
