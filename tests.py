@@ -11,10 +11,10 @@ class CompTest(unittest.TestCase):
             for comp in comp_list:
                 cards = comp['cards']
                 cards = [Card(c[0], c[1], level) for c in cards]
-                inferred_type = CardComp.from_card_list(cards)
-                inferred_type = type(inferred_type).__name__
+                inferred_card = CardComp.from_card_list(cards)
+                inferred_type = type(inferred_card).__name__
                 type_name = comp['type']
-                print(cards, 'groundtruth:', type_name, 'inferred:', inferred_type)
+                print(inferred_card.cards, 'groundtruth:', type_name, 'inferred:', inferred_type)
                 self.assertEqual(inferred_type, type_name)
 
 

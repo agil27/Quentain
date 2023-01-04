@@ -116,7 +116,9 @@ class CardComp:
 
 
 class IllegalComp(CardComp):
-    pass
+    def __init__(self, cards):
+        super().__init__(cards)
+        self.cards = cards
 
 
 class Single(CardComp):
@@ -124,12 +126,12 @@ class Single(CardComp):
         super().__init__(cards)
         whether, sorted_cards = self.satisfy(cards)
         assert whether
-        self.card = sorted_cards[0]
+        self.cards = sorted_cards
 
     def greater_than(self, card_comp):
         if not isinstance(card_comp, Single):
             return False
-        return self.card.greater_than(card_comp.card)
+        return self.cards[0].greater_than(card_comp.cards[0])
 
     @staticmethod
     def satisfy(cards):
@@ -201,9 +203,9 @@ class Triple(CardComp):
 
         # there are at most two wild cards in one card composition
         # so the smallest card must be the value for this triple
-        if not sorted_cards[1].equals(sorted_cards[0]) and sorted_cards[1].is_wildcard():
+        if not sorted_cards[1].equals(sorted_cards[0]) and not sorted_cards[1].is_wildcard():
             return False, None
-        if not sorted_cards[2].equals(sorted_cards[0]) and sorted_cards[2].is_wildcard():
+        if not sorted_cards[2].equals(sorted_cards[0]) and not sorted_cards[2].is_wildcard():
             return False, None
 
         sorted_cards[1].number = sorted_cards[0].number

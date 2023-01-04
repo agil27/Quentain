@@ -15,6 +15,10 @@
               "type": "Pair"
             },
             {
+              "cards": [[1, "Diamond"], [5, "Heart"]],
+              "type": "Pair"
+            },
+            {
               "cards": [[5, "Heart"], [16, "Joker"]],
               "type": "IllegalComp"
             },
@@ -32,6 +36,38 @@
             },
             {
               "cards": [[6, "Heart"], [7, "Heart"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[6, "Club"], [6, "Spade"], [5, "Heart"]],
+              "type": "Triple"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Heart"], [5, "Heart"]],
+              "type": "Triple"
+            },
+            {
+              "cards": [[13, "Club"], [11, "Diamond"], [5, "Heart"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[1, "Diamond"], [5, "Heart"], [5, "Heart"]],
+              "type": "Triple"
+            },
+            {
+              "cards": [[5, "Club"], [5, "Spade"], [5, "Heart"]],
+              "type": "Triple"
+            },
+            {
+              "cards": [[16, "Joker"], [10, "Club"], [5, "Heart"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[1, "Club"], [1, "Heart"], [13, "Spade"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[10, "Diamond"], [10, "Diamond"], [5, "Club"]],
               "type": "IllegalComp"
             }
           ]
