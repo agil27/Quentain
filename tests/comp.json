@@ -1,0 +1,38 @@
+{
+  "level": 5,
+  "comp_list":
+          [
+            {
+              "cards": [[15, "Joker"]],
+              "type": "Single"
+            },
+            {
+              "cards": [[12, "Spade"], [12, "Heart"]],
+              "type": "Pair"
+            },
+            {
+              "cards": [[5, "Heart"], [7, "Club"]],
+              "type": "Pair"
+            },
+            {
+              "cards": [[5, "Heart"], [16, "Joker"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[5, "Diamond"], [1, "Heart"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[5, "Heart"], [5, "Heart"]],
+              "type": "Pair"
+            },
+            {
+              "cards": [[5, "Heart"], [5, "Club"]],
+              "type": "Pair"
+            },
+            {
+              "cards": [[6, "Heart"], [7, "Heart"]],
+              "type": "IllegalComp"
+            }
+          ]
+}

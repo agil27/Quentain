@@ -1,16 +1,31 @@
 colors = ['Spade', 'Club', 'Heart', 'Diamond']
+name_map = {
+    11: 'Jack',
+    12: 'Queen',
+    13: 'King',
+    14: 'Ace',
+    15: 'Red Joker',
+    16: 'Black Joker'
+}
 
 class Card:
     def __init__(self, number, color, level):
-        # Jack, Queen, King, Black Joker, Red Joker <==> 11, 12, 13, 14, 15
-        assert isinstance(number, int) and 1 <= number <= 15
-        if 1 <= number <= 13:
+        # Jack, Queen, King, Ace, Black Joker, Red Joker <==> 11, 12, 13, 14, 15, 16
+        assert isinstance(number, int) and 1 <= number <= 16
+        if number == 1:
+            # ace
+            number = 14
+        if 2 <= number <= 14:
             assert color in colors
         else:
             assert color == 'Joker'
         self.number = number
         self.color = color
         self.level = level
+        if 2 <= number <= 10:
+            self.name = str(number)
+        else:
+            self.name = name_map[self.number]
 
     def clone(self):
         return Card(self.number, self.color, self.level)
@@ -23,13 +38,13 @@ class Card:
         assert isinstance(card, Card)
         assert isinstance(self.level, int)
         if card.number == self.level:
-            if self.number >= 14:
+            if self.number >= 15:
                 return True
             else:
                 return False
         else:
             if self.number == self.level:
-                if card.number <= 13:
+                if card.number <= 14:
                     return True
                 else:
                     return False
@@ -53,6 +68,15 @@ class Card:
     def equals(self, card):
         return self.number == card.number
 
+    def __str__(self):
+        if self.color != 'Joker':
+            return self.name + ' of ' + self.color
+        else:
+            return self.name
+
+    def __repr__(self):
+        return str(self)
+
 
 class CardComp:
     '''
@@ -73,6 +97,26 @@ class CardComp:
     @staticmethod
     def is_bomb():
         pass
+
+    @staticmethod
+    def from_card_list(cards):
+        try:
+            if len(cards) == 1:
+                return Single(cards)
+            if len(cards) == 2:
+                return Pair(cards)
+            if len(cards) == 3:
+                return Triple(cards)
+            if len(cards) == 5:
+                return FullHouse(cards)
+            if len(cards) == 6:
+                return Plate(cards)
+        except Exception as e:
+            return IllegalComp(cards)
+
+
+class IllegalComp(CardComp):
+    pass
 
 
 class Single(CardComp):
@@ -115,7 +159,8 @@ class Pair(CardComp):
         level_cond0 = cards[0].is_wildcard() and cards[1].color != 'Joker'
         level_cond1 = cards[1].is_wildcard() and cards[0].color != 'Joker'
         whether = (cards[0].equals(cards[1]) or level_cond0 or level_cond1)
-
+        if not whether:
+            return False, None
         if level_cond1 and not level_cond0:
             cards[1].number = cards[0].number
         elif level_cond0 and not level_cond1:
@@ -326,6 +371,11 @@ class Plate(CardComp):
                 return True, pair + [pair[0].clone()] + triple
         # otherwise
         return False, None
+
+    @staticmethod
+    def is_bomb():
+        return False
+
 
 
 
