@@ -69,6 +69,70 @@
             {
               "cards": [[10, "Diamond"], [10, "Diamond"], [5, "Club"]],
               "type": "IllegalComp"
+            },
+            {
+              "cards": [[10, "Diamond"], [10, "Spade"], [10, "Heart"], [5, "Heart"], [7, "Club"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Heart"], [5, "Heart"], [5, "Heart"], [2, "Diamond"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Heart"], [5, "Heart"], [5, "Club"], [2, "Diamond"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[1, "Spade"], [5, "Heart"], [1, "Club"], [1, "Diamond"], [5, "Heart"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[15, "Joker"], [16, "Joker"], [5, "Heart"], [5, "Club"], [5, "Spade"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[16, "Joker"], [16, "Joker"], [5, "Heart"], [4, "Club"], [4, "Spade"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[15, "Joker"], [15, "Joker"], [3, "Spade"], [3, "Club"], [5, "Diamond"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[2, "Spade"], [2, "Club"], [7, "Diamond"], [5, "Heart"], [5, "Heart"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[1, "Club"], [2, "Spade"], [13, "Diamond"], [5, "Heart"], [5, "Heart"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[13, "Spade"], [2, "Club"], [2, "Diamond"], [13, "Heart"], [13, "Heart"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[13, "Spade"], [1, "Club"], [1, "Diamond"], [13, "Heart"], [13, "Heart"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[13, "Spade"], [1, "Club"], [1, "Diamond"], [10, "Heart"], [13, "Heart"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[11, "Spade"], [11, "Heart"], [5, "Club"], [5, "Diamond"], [5, "Heart"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[1, "Spade"], [1, "Heart"], [11, "Club"], [11, "Diamond"], [5, "Heart"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[7, "Spade"], [5, "Heart"], [7, "Club"], [7, "Club"], [11, "Heart"]],
+              "type": "FullHouse"
+            },
+            {
+              "cards": [[7, "Spade"], [5, "Heart"], [7, "Club"], [7, "Club"], [3, "Heart"]],
+              "type": "FullHouse"
             }
           ]
 }

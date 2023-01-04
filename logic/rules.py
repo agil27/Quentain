@@ -118,7 +118,7 @@ class CardComp:
 class IllegalComp(CardComp):
     def __init__(self, cards):
         super().__init__(cards)
-        self.cards = cards
+        self.cards = sorted(cards)
 
 
 class Single(CardComp):
@@ -212,7 +212,6 @@ class Triple(CardComp):
         sorted_cards[2].number = sorted_cards[0].number
         return True, sorted_cards
 
-
     @staticmethod
     def is_bomb():
         return False
@@ -260,15 +259,15 @@ class FullHouse(CardComp):
         # if there are two wild cards
         if sorted_cards[3].is_wildcard() and sorted_cards[4].is_wildcard():
             # the rest 3 cards can be 2 + 1, 1 + 2, or 3
-            # check 1 + 2
+            # check 1 + 2 to prioritize the larger fullhouse
             whether, pair_cards = Pair.satisfy(sorted_cards[1:3])
             if whether and not sorted_cards[0].equals(pair_cards[0]):
-                return_cards = [sorted_cards[0]] * 3 + pair_cards
+                return_cards = [sorted_cards[0]] + sorted_cards[3:] + pair_cards
                 return True, return_cards
             # check 2 + 1
             whether, pair_cards = Pair.satisfy(sorted_cards[:2])
             if whether and not sorted_cards[2].equals(pair_cards[0]):
-                return_cards = [sorted_cards[2]] * 3 + pair_cards
+                return_cards = [sorted_cards[2]] + sorted_cards[3:] + pair_cards
                 return True, return_cards
             # check 3
             whether, triple_cards = Triple.satisfy(sorted_cards[:3])
@@ -280,14 +279,14 @@ class FullHouse(CardComp):
         # if no wildcards
         if not sorted_cards[3].is_wildcard() and not sorted_cards[4].is_wildcard():
             # it can either be 3 + 2 or 2 + 3
+            # check 2 + 3 first to prioritize the larger fullhouse
+            whether_triple, triple_cards = Triple.satisfy(sorted_cards[2:])
+            whether_pair, pair_cards = Pair.satisfy(sorted_cards[:2])
+            if whether_triple and whether_pair and not triple_cards[0].equals(pair_cards[0]):
+                return True, triple_cards + pair_cards
             # check 3 + 2
             whether_triple, triple_cards = Triple.satisfy(sorted_cards[:3])
             whether_pair, pair_cards = Pair.satisfy(sorted_cards[3:])
-            if whether_triple and whether_pair and not triple_cards[0].equals(pair_cards[0]):
-                return True, triple_cards + pair_cards
-            # check 2 + 3
-            whether_triple, triple_cards = Triple.satisfy(sorted_cards[2:])
-            whether_pair, pair_cards = Pair.satisfy(sorted_cards[:2])
             if whether_triple and whether_pair and not triple_cards[0].equals(pair_cards[0]):
                 return True, triple_cards + pair_cards
             # otherwise
@@ -299,20 +298,16 @@ class FullHouse(CardComp):
         # check 2 + 2
         whether_pair1, pair_cards1 = Pair.satisfy(sorted_cards[:2])
         whether_pair2, pair_cards2 = Pair.satisfy(sorted_cards[2:4])
-        if whether_pair1 and whether_pair2 and not pair_cards1[0].equals(pair_cards2):
-            if pair_cards1[0].greater_than(pair_cards2[0]):
-                return True, pair_cards1 + [pair_cards1[0].clone()] + pair_cards2
-            else:
-                return True, pair_cards2 + [pair_cards2[0].clone()] + pair_cards1
+        if whether_pair1 and whether_pair2 and not pair_cards1[0].equals(pair_cards2[0]):
+            return True, pair_cards2 + [sorted_cards[-1]] + pair_cards1
+        # check 1 + 3 first to prioritize larger fullhouse
+        whether, triple_cards = Triple.satisfy(sorted_cards[1:4])
+        if whether and not triple_cards[0].equals(sorted_cards[0]):
+            return True, triple_cards + [sorted_cards[0], sorted_cards[-1]]
         # check 3 + 1
         whether, triple_cards = Triple.satisfy(sorted_cards[:3])
         if whether and not triple_cards[0].equals(sorted_cards[3]):
-            return True, triple_cards + [sorted_cards[3], sorted_cards[3].clone()]
-        # check 1 + 3
-        whether, triple_cards = Triple.satisfy(sorted_cards[1:4])
-        if whether and not triple_cards[0].equals(sorted_cards[0]):
-            return True, triple_cards + [sorted_cards[0] + sorted_cards[0].clone()]
-
+            return True, triple_cards + [sorted_cards[3], sorted_cards[-1]]
         # otherwise
         return False, None
 
