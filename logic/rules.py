@@ -112,7 +112,17 @@ class CardComp:
             if len(cards) == 3:
                 return Triple(cards)
             if len(cards) == 5:
-                return FullHouse(cards)
+                try:
+                    return FullHouse(cards)
+                except Exception as e:
+                    return Straight(cards)
+
+                # TODO: one unique number: bomb
+                # TODO: two unique numbers and two wildcards as a pair: bomb
+                # TODO: three unique numbers with one wildcard: fullhouse
+                # TODO: two unique numbers and no wildcard: fullhouse
+                # TODO: five consecutive numbers and no wildcard: straight
+                # TODO: four unique numbers and one wildcard: straight
             if len(cards) == 6:
                 return Plate(cards)
         except Exception as e:
@@ -316,6 +326,127 @@ class FullHouse(CardComp):
         return False
 
 
+class Straight(CardComp):
+    '''
+    Five consecutive singles
+    '''
+    def __init__(self, cards):
+        super().__init__(cards)
+        whether, sorted_cards = self.satisfy(cards)
+        assert whether
+        self.cards = sorted_cards
+
+    def greater_than(self, card_comp):
+        if not isinstance(card_comp, Straight):
+            return False
+        return self.cards[0].greater_than(card_comp.cards[0])
+
+
+    @staticmethod
+    def satisfy(cards):
+        if len(cards) != 5:
+            return False, None
+
+        # sort the card and make level card at proper position
+        sorted_cards = sorted(cards)
+        num_wildcards = sum([card.is_wildcard() for card in sorted_cards])
+        if num_wildcards == 1:
+            # a b c level wild -> a b level c wild
+            if sorted_cards[3].number < sorted_cards[2].number and sorted_cards[3].number > sorted_cards[1].number:
+                sorted_cards = sorted_cards[0:2] + sorted_cards[3:4] + sorted_cards[2:3] + sorted_cards[4::]
+            # a b c level wild -> a level b c wild
+            if sorted_cards[3].number < sorted_cards[1].number and sorted_cards[3].number > sorted_cards[0].number:
+                sorted_cards = sorted_cards[0:1] + sorted_cards[3:4] + sorted_cards[1:3] + sorted_cards[4::]
+            # a b c level wild -> level a b c wild
+            if sorted_cards[3].number < sorted_cards[0].number:
+                sorted_cards = sorted_cards[3:4] + sorted_cards[0:3] + sorted_cards[4::]
+
+        if num_wildcards == 2:
+            # a b level wild wild -> a level b wild wild
+            if sorted_cards[-3].number > sorted_cards[-5].number and sorted_cards[-3].number < sorted_cards[-4].number:
+                sorted_cards = sorted_cards[0:1] + sorted_cards[2:3] + sorted_cards[1:2] + sorted_cards[3::]
+            # a b level wild wild -> level a b wild wild
+            elif sorted_cards[-3].number < sorted_cards[-5].number:
+                sorted_cards = sorted_cards[2:3] + sorted_cards[0:2] + sorted_cards[3::]
+
+        # list of card numbers and colors
+        card_numbers = [card.number for card in sorted_cards]
+
+        # largest card can be no more than ace
+        if sorted(card_numbers)[-1] > 14:
+            return False, None
+        # if there are five unique numbers
+        if len(set(card_numbers)) == 5:
+            # no wild card:
+            if num_wildcards == 0:
+                if card_numbers[0] + 4 == card_numbers[4]:
+                    return True, sorted_cards
+                else:
+                    return False, None
+            if num_wildcards == 1:
+                first_four = [card_numbers[i]-card_numbers[0] for i in range(4)]
+
+                # i, i+1, i+2, i+3 wild
+                if first_four == [0, 1, 2, 3]:
+                    if card_numbers[3] <= 13:  # i+3 less than A
+                        return True, sorted_cards
+                    if card_numbers[3] == 14: # i+3 is A
+                        return True, sorted_cards[4::] + sorted_cards[0:3]
+                # i, i+1, i+2, i+4 wild
+                elif first_four == [0, 1, 2, 4]:
+                    return True,  sorted_cards[0:3] + sorted_cards[4::] + sorted_cards[3:4]
+                # i, i+1, i+3, i+4 wild
+                elif first_four == [0, 1, 3, 4]:
+                    return True, sorted_cards[0:2] + sorted_cards[4::] + sorted_cards[2:4]
+                # i, i+2, i+3, i+4 wild
+                elif first_four == [0, 2, 3, 4]:
+                    return True, sorted_cards[0:1] + sorted_cards[4::] + sorted_cards[1:4]
+                else:
+                    return False, None
+
+
+        # four or three unique card numbers
+        elif len(set(card_numbers)) == 4 or len(set(card_numbers)) == 3:
+            if num_wildcards == 2:
+                first_three = [card_numbers[i] - card_numbers[0] for i in range(3)]
+                # i, i+1, i+2, wild, wild
+                if first_three == [0, 1, 2]:
+                    if card_numbers[2] <= 12:  # i+2 less than K
+                        return True, sorted_cards
+                    if card_numbers[2] == 13:  # i+2 is K
+                        return True, [sorted_cards[-1]] + sorted_cards[1:4] + [sorted_cards[-2]]
+                    if card_numbers[2] == 14: # i+2 is A
+                        return True, sorted_cards[3::] + sorted_cards[1:4]
+                # i, i+2, i+3, wild, wild
+                elif first_three == [0, 2, 3]:
+                    if card_numbers[2] <= 13:  # i+3 less than A
+                        return True, [sorted_cards[0], sorted_cards[-1]] + sorted_cards[1:3] + [sorted_cards[-1]]
+                    if card_numbers[2] == 14:  # i+3 is A
+                        return True, [sorted_cards[-1], sorted_cards[0], sorted_cards[-1]] + sorted_cards[1:3]
+                # i, i+1, i+3, wild, wild
+                elif first_three == [0, 1, 3]:
+                    if card_numbers[2] <= 13:  # i+3 less than A
+                        return True, sorted_cards[0:2] + [sorted_cards[-1], sorted_cards[2]] + [sorted_cards[-1]]
+                    if card_numbers[2] == 14:  # i+3 is A
+                        return True, [sorted_cards[-1]] + sorted_cards[0:2] + [sorted_cards[-1], sorted_cards[2]]
+                # i, i+2, i+4, wild, wild
+                elif first_three == [0, 2, 4]:
+                    return True, sorted_cards[0:1] + [sorted_cards[-1]] + sorted_cards[1:2] + [sorted_cards[-1]] + sorted_cards[2:3]
+                else:
+                    return false, None
+            else:
+                return False
+
+        # less than three unique card numbers
+        else:
+            return False, None
+
+
+    @staticmethod
+    def is_bomb():
+        return False
+
+
 class Plate(CardComp):
     '''
     Two consecutive Triples
@@ -385,3 +516,4 @@ class Plate(CardComp):
     @staticmethod
     def is_bomb():
         return False
+

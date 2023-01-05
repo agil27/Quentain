@@ -181,6 +181,74 @@
             {
               "cards": [[1, "Spade"], [1, "Club"], [5, "Heart"], [5, "Heart"], [2, "Heart"], [2, "Diamond"]],
               "type": "Plate"
+            },
+            {
+              "cards": [[6, "Spade"], [7, "Club"], [8, "Heart"], [9, "Heart"], [10, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[1, "Spade"], [11, "Club"], [12, "Heart"], [13, "Heart"], [10, "Spade"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[6, "Spade"], [7, "Club"], [8, "Heart"], [9, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[1, "Spade"], [11, "Club"], [12, "Heart"], [13, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[6, "Spade"], [5, "Heart"], [7, "Club"], [8, "Heart"], [10, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[6, "Spade"], [5, "Heart"], [7, "Club"], [9, "Heart"], [10, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[6, "Spade"], [9, "Club"], [8, "Heart"], [10, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[6, "Spade"], [7, "Club"], [8, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[12, "Spade"], [13, "Club"], [1, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[11, "Spade"], [12, "Club"], [13, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[6, "Spade"], [7, "Club"], [8, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[6, "Spade"], [7, "Club"], [9, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[6, "Spade"], [8, "Club"], [9, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[7, "Spade"], [8, "Club"], [9, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[11, "Spade"], [7, "Club"], [9, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "Straight"
+            },
+            {
+              "cards": [[6, "Spade"], [3, "Club"], [9, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "IllegalComp"
+            },
+            {
+              "cards": [[3, "Spade"], [3, "Club"], [9, "Heart"], [5, "Heart"], [5, "Heart"]],
+              "type": "FullHouse"
             }
           ]
 }
