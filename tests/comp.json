@@ -84,7 +84,7 @@
             },
             {
               "cards": [[1, "Spade"], [5, "Heart"], [1, "Club"], [1, "Diamond"], [5, "Heart"]],
-              "type": "FullHouse"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[15, "Joker"], [16, "Joker"], [5, "Heart"], [5, "Club"], [5, "Spade"]],
@@ -144,7 +144,7 @@
             },
             {
               "cards": [[4, "Heart"], [5, "Heart"], [4, "Heart"], [3, "Diamond"], [3, "Spade"], [5, "Heart"]],
-              "type": "Plate"
+              "type": "Tube"
             },
             {
               "cards": [[3, "Club"], [2, "Diamond"], [2, "Heart"], [3, "Spade"], [3, "Diamond"], [2, "Club"]],
@@ -324,55 +324,55 @@
             },
             {
               "cards": [[15, "Joker"], [15, "Joker"], [16, "Joker"], [16, "Joker"]],
-              "type": "Bomb"
+              "type": "JokerBomb"
             },
             {
               "cards": [[3, "Spade"], [3, "Club"], [5, "Heart"], [5, "Heart"]],
-              "type": "Bomb"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[3, "Spade"], [3, "Club"], [3, "Heart"], [5, "Heart"]],
-              "type": "Bomb"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[3, "Spade"], [3, "Club"], [3, "Diamond"], [5, "Heart"], [5, "Heart"]],
-              "type": "Bomb"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[3, "Spade"], [3, "Club"], [3, "Diamond"], [3, "Heart"], [5, "Heart"]],
-              "type": "Bomb"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[3, "Spade"], [3, "Club"], [3, "Diamond"], [3, "Heart"], [3, "Heart"],  [5, "Heart"]],
-              "type": "Bomb"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[3, "Spade"], [3, "Club"], [3, "Diamond"], [3, "Heart"], [5, "Heart"],  [5, "Heart"]],
-              "type": "Bomb"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[3, "Spade"], [3, "Spade"], [3, "Club"], [3, "Diamond"], [3, "Heart"], [3, "Heart"],  [5, "Heart"]],
-              "type": "Bomb"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[3, "Spade"], [3, "Spade"], [3, "Club"], [3, "Diamond"], [3, "Heart"], [5, "Heart"],  [5, "Heart"]],
-              "type": "Bomb"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[3, "Spade"], [3, "Spade"], [3, "Club"], [3, "Diamond"], [3, "Diamond"], [3, "Heart"], [5, "Heart"],  [5, "Heart"]],
-              "type": "Bomb"
+              "type": "NaiveBomb"
             },
             {
               "cards": [[2, "Spade"], [3, "Spade"], [4, "Spade"], [5, "Spade"], [6, "Spade"]],
-              "type": "Bomb"
+              "type": "StraightFlush"
             },
             {
               "cards": [[2, "Spade"], [3, "Spade"], [4, "Spade"], [5, "Spade"], [5, "Heart"]],
-              "type": "Bomb"
+              "type": "StraightFlush"
             },
             {
               "cards": [[7, "Spade"], [8, "Spade"], [9, "Spade"], [5, "Heart"], [10, "Heart"]],
-              "type": "Bomb"
+              "type": "Straight"
             }
           ]
 }

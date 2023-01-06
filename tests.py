@@ -1,10 +1,12 @@
 import unittest
 from logic import *
+import pickle
 import json
 
 
 class CompTest(unittest.TestCase):
     def test_comp(self):
+        pass
         with open('tests/comp.json', 'r') as f:
             test_file = json.load(f)
             level, comp_list = test_file['level'], test_file['comp_list']

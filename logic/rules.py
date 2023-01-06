@@ -1,3 +1,5 @@
+import traceback
+
 colors = ['Spade', 'Club', 'Heart', 'Diamond']
 name_map = {
     11: 'Jack',
@@ -15,7 +17,7 @@ class Card:
 
         # for special case of Ace
         # A, 2, 3, 4, 5 and 10, J, Q, K, A is both acceptable
-        self.raw_number = number
+        self.raw_number = number if number != 14 else 1
         if number == 1:
             # ace
             number = 14
@@ -54,6 +56,9 @@ class Card:
                     return False
             else:
                 return self.number > card.number
+
+    def consecutive_greater_than(self, card):
+        return self.raw_number > card.raw_number
 
     def __lt__(self, card):
         if card.greater_than(self):
@@ -129,33 +134,72 @@ class CardComp:
 
     @staticmethod
     def from_card_list(cards):
-        try:
-            if len(cards) == 1:
-                return Single(cards)
-            if len(cards) == 2:
-                return Pair(cards)
-            if len(cards) == 3:
-                return Triple(cards)
-            if len(cards) == 4:
-                return Bomb(cards)
-            if len(cards) == 5:
-                try:
-                    return Bomb(cards)
-                except Exception as e:
-                    try:
-                        return FullHouse(cards)
-                    except Exception as e:
-                        return Straight(cards)
-            if len(cards) == 6:
-                try:
-                    return Bomb(cards)
-                except Exception as e:
-                    try:
-                        return Plate(cards)
-                    except Exception as e:
-                        return Tube(cards)
-        except Exception as e:
-            return IllegalComp(cards)
+        if len(cards) == 1:
+            single = Single(cards)
+            if single.valid:
+                return single
+            else:
+                return IllegalComp(cards)
+        elif len(cards) == 2:
+            pair = Pair(cards)
+            if pair.valid:
+                return pair
+            else:
+                return IllegalComp(cards)
+        elif len(cards) == 3:
+            triple = Triple(cards)
+            if triple.valid:
+                return triple
+            else:
+                return IllegalComp(cards)
+        elif len(cards) == 4:
+            joker_bomb = JokerBomb(cards)
+            if joker_bomb.valid:
+                return joker_bomb
+            else:
+                bomb = NaiveBomb(cards)
+                if bomb.valid:
+                    return bomb
+                else:
+                    return IllegalComp(cards)
+        elif len(cards) == 5:
+            straight_flush = StraightFlush(cards)
+            if straight_flush.valid:
+                return straight_flush
+            else:
+                bomb = NaiveBomb(cards)
+                if bomb.valid:
+                    return bomb
+                else:
+                    fullhouse = FullHouse(cards)
+                    if fullhouse.valid:
+                        return fullhouse
+                    else:
+                        straight = Straight(cards)
+                        if straight.valid:
+                            return straight
+                        else:
+                            return IllegalComp(cards)
+        elif len(cards) == 6:
+            bomb = NaiveBomb(cards)
+            if bomb.valid:
+                return bomb
+            else:
+                tube = Tube(cards)
+                if tube.valid:
+                    return tube
+                else:
+                    plate = Plate(cards)
+                    if plate.valid:
+                        return plate
+                    else:
+                        return IllegalComp(cards)
+        else:
+            bomb = NaiveBomb(cards)
+            if bomb.valid:
+                return bomb
+            else:
+                return IllegalComp(cards)
 
 
 class IllegalComp(CardComp):
@@ -168,7 +212,7 @@ class Single(CardComp):
     def __init__(self, cards):
         super().__init__(cards)
         whether, sorted_cards = self.satisfy(cards)
-        assert whether
+        self.valid = whether
         self.cards = sorted_cards
 
     def greater_than(self, card_comp):
@@ -189,7 +233,7 @@ class Pair(CardComp):
     def __init__(self, cards):
         super().__init__(cards)
         whether, sorted_cards = self.satisfy(cards)
-        assert whether
+        self.valid = whether
         self.cards = sorted_cards
 
     def greater_than(self, card_comp):
@@ -200,12 +244,12 @@ class Pair(CardComp):
     @staticmethod
     def satisfy(cards):
         if len(cards) != 2:
-            return False, None
+            return False, sorted(cards)
         level_cond0 = cards[0].is_wildcard() and cards[1].color != 'Joker'
         level_cond1 = cards[1].is_wildcard() and cards[0].color != 'Joker'
         whether = (cards[0].equals(cards[1]) or level_cond0 or level_cond1)
         if not whether:
-            return False, None
+            return False, sorted(cards)
         return True, sorted(cards)
 
     @staticmethod
@@ -217,10 +261,8 @@ class Triple(CardComp):
     def __init__(self, cards):
         super().__init__(cards)
         whether, sorted_cards = self.satisfy(cards)
-        assert whether
+        self.valid = whether
         self.cards = sorted_cards
-        self.cards[1].number = self.cards[0].number
-        self.cards[2].number = self.cards[0].number
 
     def greater_than(self, card_comp):
         if not isinstance(card_comp, Triple):
@@ -230,7 +272,7 @@ class Triple(CardComp):
     @staticmethod
     def satisfy(cards):
         if len(cards) != 3:
-            return False, None
+            return False, sorted(cards)
 
         # sorted with ascending order
         # using the __lt__ function defined in Card class
@@ -238,14 +280,14 @@ class Triple(CardComp):
 
         # if there are joker(s) in this comp, it is definitely illegal
         if sorted_cards[-1].color == 'Joker':
-            return False, None
+            return False, sorted(cards)
 
         # there are at most two wild cards in one card composition
         # so the smallest card must be the value for this triple
         if not sorted_cards[1].equals(sorted_cards[0]) and not sorted_cards[1].is_wildcard():
-            return False, None
+            return False, sorted(cards)
         if not sorted_cards[2].equals(sorted_cards[0]) and not sorted_cards[2].is_wildcard():
-            return False, None
+            return False, sorted(cards)
 
         sorted_cards[1].number = sorted_cards[0].number
         sorted_cards[2].number = sorted_cards[0].number
@@ -263,7 +305,7 @@ class FullHouse(CardComp):
     def __init__(self, cards):
         super().__init__(cards)
         whether, sorted_cards = self.satisfy(cards)
-        assert whether
+        self.valid = whether
         self.cards = sorted_cards
 
     def greater_than(self, card_comp):
@@ -274,7 +316,7 @@ class FullHouse(CardComp):
     @staticmethod
     def satisfy(cards):
         if len(cards) != 5:
-            return False, None
+            return False, sorted(cards)
 
         # similar, sort first
         sorted_cards = sorted(cards)
@@ -282,12 +324,12 @@ class FullHouse(CardComp):
         # if the largest card is Joker, it must be a pair of Joker
         if sorted_cards[4].color == 'Joker':
             if not sorted_cards[3].equals(sorted_cards[4]):
-                return False, None
+                return False, sorted(cards)
             else:
                 # check if the rest is a triple
                 whether, triple_cards = Triple.satisfy(sorted_cards[:3])
                 if not whether:
-                    return False, None
+                    return False, sorted(cards)
                 else:
                     return True, triple_cards + sorted_cards[3:]
 
@@ -313,7 +355,7 @@ class FullHouse(CardComp):
             if whether:
                 return True, triple_cards + sorted_cards[3:]
             # otherwise
-            return False, None
+            return False, sorted(cards)
 
         # if no wildcards
         if not sorted_cards[3].is_wildcard() and not sorted_cards[4].is_wildcard():
@@ -329,7 +371,7 @@ class FullHouse(CardComp):
             if whether_triple and whether_pair and not triple_cards[0].equals(pair_cards[0]):
                 return True, triple_cards + pair_cards
             # otherwise
-            return False, None
+            return False, sorted(cards)
 
         # if there is only one wild card
         # it must be the greatest one
@@ -348,7 +390,7 @@ class FullHouse(CardComp):
         if whether and not triple_cards[0].equals(sorted_cards[3]):
             return True, triple_cards + [sorted_cards[3], sorted_cards[-1]]
         # otherwise
-        return False, None
+        return False, sorted(cards)
 
     @staticmethod
     def is_bomb():
@@ -362,13 +404,13 @@ class Straight(CardComp):
     def __init__(self, cards):
         super().__init__(cards)
         whether, sorted_cards = self.satisfy(cards)
-        assert whether
+        self.valid = whether
         self.cards = sorted_cards
 
     def greater_than(self, card_comp):
         if not isinstance(card_comp, Straight):
             return False
-        return self.cards[0].number > card_comp.cards[0].number
+        return self.cards[0].consecutive_greater_than(card_comp.cards[0])
     
     # @staticmethod
     # def sort_no_level(cards):
@@ -377,7 +419,7 @@ class Straight(CardComp):
     @staticmethod
     def satisfy(cards):
         if len(cards) != 5:
-            return False, None
+            return False, sorted(cards)
 
         # sort the card and make level card at proper position
         sorted_cards = super(Straight, Straight).sort_no_level(cards)
@@ -387,13 +429,13 @@ class Straight(CardComp):
 
         # largest card can be no more than ace
         if max(card_numbers) > 14:
-            return False, None
+            return False, sorted(cards)
         # no wildcards
         if num_wildcards == 0:
             if card_numbers[0] + 4 == card_numbers[4] and len(set(card_numbers)) == 5:
                 return True, sorted_cards
             else:
-                return False, None
+                return False, sorted(cards)
         # one wildcard
         elif num_wildcards == 1:
             first_four = [card_numbers[i] - card_numbers[0] for i in range(4)]
@@ -413,7 +455,7 @@ class Straight(CardComp):
             elif first_four == [0, 2, 3, 4]:
                 return True, sorted_cards[0:1] + sorted_cards[4::] + sorted_cards[1:4]
             else:
-                return False, None
+                return False, sorted(cards)
 
         # two wildcards
         elif num_wildcards == 2:
@@ -443,7 +485,7 @@ class Straight(CardComp):
                 return True, sorted_cards[0:1] + [sorted_cards[-1]] + sorted_cards[1:2] + [
                     sorted_cards[-1]] + sorted_cards[2:3]
             else:
-                return false, None
+                return False, sorted(cards)
 
     @staticmethod
     def is_bomb():
@@ -457,25 +499,25 @@ class Plate(CardComp):
     def __init__(self, cards):
         super().__init__(cards)
         whether, sorted_cards = self.satisfy(cards)
-        assert whether
+        self.valid = whether
         self.cards = sorted_cards
 
     def greater_than(self, card_comp):
         if not isinstance(card_comp, Plate):
             return False
-        return self.cards[0].greater_than(card_comp.cards[0])
+        return self.cards[0].consecutive_greater_than(card_comp.cards[0])
 
     @staticmethod
     def satisfy(cards):
         if len(cards) != 6:
-            return False, None
+            return False, sorted(cards)
 
         # same logic as Triple, we first sort the card comp
         sorted_cards = sorted(cards)
 
         # no joker in a plate
         if sorted_cards[-1].color == 'Joker':
-            return False, None
+            return False, sorted(cards)
 
         # if no wildcards
         if not sorted_cards[4].is_wildcard() and not sorted_cards[5].is_wildcard():
@@ -487,11 +529,9 @@ class Plate(CardComp):
                     return True, triple_cards1 + triple_cards2
                 # special case of Ace
                 if triple_cards1[0].number == 2 and triple_cards2[0].number == 14:
-                    for i in range(3):
-                        triple_cards2[i].number = 1
-                    return True, triple_cards1 + triple_cards2
+                    return True, triple_cards2 + triple_cards1
             # otherwise
-            return False, None
+            return False, sorted(cards)
 
         # at least 1 wild card
         # check fullhouse first
@@ -508,13 +548,11 @@ class Plate(CardComp):
                 return True, pair + [sorted_cards[-1]] + triple
             # treat special case of Ace
             if triple[0].number == 14 and pair[0].number == 2:
-                triple[0].number = 1
                 return True, triple + pair + [sorted_cards[-1]]
             if triple[0].number == 2 and pair[0].number == 14:
-                pair[0].number = 1
                 return True, pair + [sorted_cards[-1]] + triple
         # otherwise
-        return False, None
+        return False, sorted(cards)
 
     @staticmethod
     def is_bomb():
@@ -528,18 +566,18 @@ class Tube(CardComp):
     def __init__(self, cards):
         super().__init__(cards)
         whether, sorted_cards = self.satisfy(cards)
-        assert whether
+        self.valid = whether
         self.cards = sorted_cards
 
     def greater_than(self, card_comp):
         if not isinstance(card_comp, Tube):
             return False
-        return self.cards[0].number > card_comp.cards[0].number
+        return self.cards[0].consecutive_greater_than(card_comp.cards[0])
 
     @staticmethod
     def satisfy(cards):
         if len(cards) != 6:
-            return False, None
+            return False, sorted(cards)
 
         # sort the card and make level card at proper position
         sorted_cards = super(Tube, Tube).sort_no_level(cards)
@@ -549,7 +587,7 @@ class Tube(CardComp):
 
         # largest card can be no more than ace
         if max(card_numbers) > 14:
-            return False, None
+            return False, sorted(cards)
         # no wildcards
         if num_wildcards == 0:
             # must be i, i, i+1, i+1, i+2, i+2
@@ -558,9 +596,9 @@ class Tube(CardComp):
                 if temp == [0, 0, 1, 1, 2, 2]:
                     return True, sorted_cards
                 else:
-                    return False, None
+                    return False, sorted(cards)
             else:
-                return False, None
+                return False, sorted(cards)
 
         # one wildcard
         elif num_wildcards == 1:
@@ -573,14 +611,14 @@ class Tube(CardComp):
             elif first_five == [0, 1, 1, 2, 2]: # i, i+1, i+1, i+2, i+2 wild
                 return True, sorted_cards[0:1] + [sorted_cards[-1]] + sorted_cards[1:5]
             else:
-                return False, None
+                return False, sorted(cards)
 
         # two wildcards
         elif num_wildcards == 2:
             first_four = [card_numbers[i] - card_numbers[0] for i in range(4)]
             # i, i, i+1, i+1, wild wild
             if first_four == [0, 0, 1, 1]:
-                if sorted_cards[-3] < 14: # i+1 smaller than Ace
+                if sorted_cards[-3].number < 14: # i+1 smaller than Ace
                     return True, sorted_cards
                 else:
                     return True, sorted_cards[4:6] + sorted_cards[0:4]
@@ -597,63 +635,80 @@ class Tube(CardComp):
             elif first_four == [0, 1, 2, 2]:
                 return True, [sorted_cards[0], sorted_cards[-1]] + [sorted_cards[1],sorted_cards[-2]] + sorted_cards[2:4]
             else:
-                return False, None
+                return False, sorted(cards)
     @staticmethod
     def is_bomb():
         return False
 
 
-class Bomb(CardComp):
+class JokerBomb(CardComp):
     '''
-    At least Four Singles with same color
-    Straight Flush
-    Joker Bomb
+    Four jokers; the largest Comp possible
     '''
     def __init__(self, cards):
         super().__init__(cards)
         whether, sorted_cards = self.satisfy(cards)
-        assert whether
+        self.valid = whether
         self.cards = sorted_cards
-        self.type = None
 
     def greater_than(self, card_comp):
-        # same type of bombs
-        if card_comp.type == self.type:
-            if self.type == "Straight Flush":
-                return self.cards[0].number > card_comp.cards[0].number
-            else:
-                return self.cards[0] > card_comp.cards[0]
-        # different type of bombs
-        if self.type == "JokerBomb":
-            return True
-        elif self.type == "8Singles":
-            return card_comp.type not in["JokerBomb"]
-        elif self.type == "7Singles":
-            return card_comp.type not in ["JokerBomb", "8Singles"]
-        elif self.type == "6Singles":
-            return card_comp.type not in ["JokerBomb", "8Singles", "7Singles"]
-        elif self.type == "Straight Flush":
-            return card_comp.type not in ["JokerBomb", "8Singles", "7Singles", "6Singles"]
-        elif self.type == "5Singles":
-            return card_comp.type not in ["JokerBomb", "8Singles", "7Singles", "6Singles", "Straight Flush"]
-        elif self.type == "4Singles":
-            return card_comp.type not in ["JokerBomb", "8Singles", "7Singles", "6Singles", "Straight Flush", "5Singles"]
-
-    def is_JokerBomb(self, cards):
+        # there can only be one joker bomb in one game
+        return True
+    
+    @staticmethod
+    def satisfy(cards):
         if len(cards) != 4:
             return False
-        elif sorted([card.number for card in cards] == [15, 15, 16, 16]):
+        elif sorted([card.number for card in cards]) == [15, 15, 16, 16]:
             return True, sorted(cards)
         else:
-            return False, None
+            return False, sorted(cards)
 
-    def is_BombOfSingles(self, cards, n):
-        # n is number of singles in the bomb, can be 4, 5, 6, 7, 8
+    @staticmethod
+    def is_bomb():
+        return True
+
+
+class NaiveBomb(CardComp):
+    '''
+    At least 4 cards with the same number
+    '''
+    def __init__(self, cards):
+        super().__init__(cards)
+        whether, sorted_cards = self.satisfy(cards)
+        self.valid = whether
+        self.cards = sorted_cards
+
+    def greater_than(self, card_comp):
+        # if the other is not bomb
+        if not card_comp.isbomb():
+            return True
+
+        # if the other is actually bomb
+        # JokerBomb > everything
+        if isinstance(card_comp, JokerBomb):
+            return False
+        # 6 Bomb > StraightFlush > 5 Bomb
+        elif isinstance(card_comp, StraightFlush):
+            if len(self.cards) >= 6:
+                return True
+            else:
+                return False
+        # Also NaiveBomb, compare number of cards first
+        # then actual value
+        else:
+            if len(self.cards) > len(card_comp.cards):
+                return True
+            else:
+                return self.cards[0].greater_than(card_comp.cards[0])
+    
+    @staticmethod
+    def satisfy(cards):
         sorted_cards = sorted(cards)
         card_numbers = [card.number for card in sorted_cards]
         num_wildcards = sum([card.is_wildcard() for card in sorted_cards])
-        if len(cards) != n:
-            return False, None
+        if len(cards) < 4:
+            return False, sorted(cards)
         elif num_wildcards == 0 and len(set(card_numbers)) == 1:
             return True, sorted_cards
         elif num_wildcards == 1 and len(set(card_numbers[0:-1])) == 1:
@@ -661,16 +716,42 @@ class Bomb(CardComp):
         elif num_wildcards == 2 and len(set(card_numbers[0:-2])) == 1:
             return True, sorted_cards
         else:
-            return False, None
+            return False, sorted(cards)
+        
+    @staticmethod
+    def is_bomb():
+        return True
+    
 
-    def is_StraightFlush(self, cards):
+class StraightFlush(CardComp):
+    def __init__(self, cards):
+        super().__init__(cards)
+        whether, sorted_cards = self.satisfy(cards)
+        self.valid = whether
+        self.cards = sorted_cards
+
+    def greater_than(self, card_comp):
+        if not card_comp.is_bomb():
+            return True
+
+        if isinstance(card_comp, JokerBomb):
+            return False
+        elif isinstance(card_comp, StraightFlush):
+            return self.cards[0].greater_than(card_comp.cards[0])
+        else:
+            if len(card_comp.cards) <= 5:
+                return True
+            else:
+                return False
+
+    @staticmethod
+    def satisfy(cards):
         sorted_cards = sorted(cards)
         card_colors = [card.color for card in sorted_cards]
-        card_numbers = [card.number for card in sorted_cards]
         num_wildcards = sum([card.is_wildcard() for card in sorted_cards])
 
         if len(cards) != 5:
-            return False, None
+            return False, sorted(cards)
         else:
             is_Straight, sorted_cards = Straight.satisfy(cards)
             if is_Straight:
@@ -681,49 +762,9 @@ class Bomb(CardComp):
                 elif num_wildcards == 2 and len(set(card_colors[0:-2])) == 1:
                     return True, sorted_cards
                 else:
-                    return False, None
+                    return False, sorted(cards)
             else:
-                return False, None
-
-    @staticmethod
-    def satisfy(cards):
-        is_JokerBomb, sorted_cards = self.is_JokerBomb(cards)
-        if is_JokerBomb:
-            self.type = "JokerBomb"
-            return sorted_cards
-        # 8 same singles
-        is_BombOfSingles8, sorted_cards = self.is_BombOfSingles(cards, 8)
-        if is_BombOfSingles8:
-            self.type = "8Singles"
-            return sorted_cards
-        # 7 same singles
-        is_BombOfSingles7, sorted_cards = self.is_BombOfSingles(cards, 7)
-        if is_BombOfSingles7:
-            self.type = "7Singles"
-            return sorted_cards
-        # 6 same singles
-        is_BombOfSingles6, sorted_cards = self.is_BombOfSingles(cards, 6)
-        if is_BombOfSingles6:
-            self.type = "6Singles"
-            return sorted_cards
-
-        # Straight Flush
-        is_StraightFlush, sorted_cards = self.is_StraightFlush(cards)
-        if is_StraightFlush:
-            self.type = "StraightFlush"
-            return sorted_cards
-
-        # 5 same singles
-        is_BombOfSingles5, sorted_cards = self.is_BombOfSingles(cards, 5)
-        if is_BombOfSingles5:
-            self.type = "5Singles"
-            return sorted_cards
-
-        # 4 same singles
-        is_BombOfSingles4, sorted_cards = self.is_BombOfSingles(cards, 4)
-        if is_BombOfSingles4:
-            self.type = "4Singles"
-            return sorted_cards
+                return False, sorted(cards)
 
     @staticmethod
     def is_bomb():
