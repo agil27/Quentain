@@ -484,6 +484,11 @@ class Straight(CardComp):
             elif first_three == [0, 2, 4]:
                 return True, sorted_cards[0:1] + [sorted_cards[-1]] + sorted_cards[1:2] + [
                     sorted_cards[-1]] + sorted_cards[2:3]
+            # i, i+3, i+4, wild, wild
+            elif first_three == [0, 3, 4]:
+                return True, sorted_cards[0:1] + sorted_cards[-2:] + sorted_cards[1:3]
+            elif first_three == [0, 1, 4]:
+                return True, sorted_cards[:2] + sorted_cards[-2:] + sorted_cards[4:]
             else:
                 return False, sorted(cards)
 
