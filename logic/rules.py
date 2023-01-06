@@ -93,6 +93,31 @@ class CardComp:
         pass
 
     @staticmethod
+    def sort_no_level(cards):
+        sorted_cards = sorted(cards)
+        num_wildcards = sum([card.is_wildcard() for card in sorted_cards])
+        if num_wildcards == 0:
+            if sorted_cards[-1].level != sorted_cards[-1].number:
+                return sorted_cards
+            else:
+                wildcards = []
+        if num_wildcards == 1:
+            if sorted_cards[-2].level != sorted_cards[-2].number:
+                return sorted_cards
+            else:
+                wildcards = [sorted_cards[-1]]
+                sorted_cards = sorted_cards[0:-1]
+        if num_wildcards == 2:
+            if sorted_cards[-3].level != sorted_cards[-3].number:
+                return sorted_cards
+            else:
+                wildcards = [sorted_cards[-2], sorted_cards[-1]]
+                sorted_cards = sorted_cards[0:-2]
+        card_numbers = [(card.number, i) for i, card in enumerate(sorted_cards)]
+        card_numbers = sorted(card_numbers, key=lambda tup: tup[0])
+        return [sorted_cards[card[1]] for card in card_numbers] + wildcards
+
+    @staticmethod
     def satisfy(cards):
         # return two values
         # (whether_satisfy, the re-organized card comp)
@@ -111,20 +136,24 @@ class CardComp:
                 return Pair(cards)
             if len(cards) == 3:
                 return Triple(cards)
+            if len(cards) == 4:
+                return Bomb(cards)
             if len(cards) == 5:
                 try:
-                    return FullHouse(cards)
+                    return Bomb(cards)
                 except Exception as e:
-                    return Straight(cards)
-
-                # TODO: one unique number: bomb
-                # TODO: two unique numbers and two wildcards as a pair: bomb
-                # TODO: three unique numbers with one wildcard: fullhouse
-                # TODO: two unique numbers and no wildcard: fullhouse
-                # TODO: five consecutive numbers and no wildcard: straight
-                # TODO: four unique numbers and one wildcard: straight
+                    try:
+                        return FullHouse(cards)
+                    except Exception as e:
+                        return Straight(cards)
             if len(cards) == 6:
-                return Plate(cards)
+                try:
+                    return Bomb(cards)
+                except Exception as e:
+                    try:
+                        return Plate(cards)
+                    except Exception as e:
+                        return Tube(cards)
         except Exception as e:
             return IllegalComp(cards)
 
@@ -339,8 +368,11 @@ class Straight(CardComp):
     def greater_than(self, card_comp):
         if not isinstance(card_comp, Straight):
             return False
-        return self.cards[0].greater_than(card_comp.cards[0])
-
+        return self.cards[0].number > card_comp.cards[0].number
+    
+    # @staticmethod
+    # def sort_no_level(cards):
+    #     return super(Straight, Straight).sort_no_level()
 
     @staticmethod
     def satisfy(cards):
@@ -348,99 +380,70 @@ class Straight(CardComp):
             return False, None
 
         # sort the card and make level card at proper position
-        sorted_cards = sorted(cards)
+        sorted_cards = super(Straight, Straight).sort_no_level(cards)
         num_wildcards = sum([card.is_wildcard() for card in sorted_cards])
-        if num_wildcards == 1:
-            # a b c level wild -> a b level c wild
-            if sorted_cards[3].number < sorted_cards[2].number and sorted_cards[3].number > sorted_cards[1].number:
-                sorted_cards = sorted_cards[0:2] + sorted_cards[3:4] + sorted_cards[2:3] + sorted_cards[4::]
-            # a b c level wild -> a level b c wild
-            if sorted_cards[3].number < sorted_cards[1].number and sorted_cards[3].number > sorted_cards[0].number:
-                sorted_cards = sorted_cards[0:1] + sorted_cards[3:4] + sorted_cards[1:3] + sorted_cards[4::]
-            # a b c level wild -> level a b c wild
-            if sorted_cards[3].number < sorted_cards[0].number:
-                sorted_cards = sorted_cards[3:4] + sorted_cards[0:3] + sorted_cards[4::]
-
-        if num_wildcards == 2:
-            # a b level wild wild -> a level b wild wild
-            if sorted_cards[-3].number > sorted_cards[-5].number and sorted_cards[-3].number < sorted_cards[-4].number:
-                sorted_cards = sorted_cards[0:1] + sorted_cards[2:3] + sorted_cards[1:2] + sorted_cards[3::]
-            # a b level wild wild -> level a b wild wild
-            elif sorted_cards[-3].number < sorted_cards[-5].number:
-                sorted_cards = sorted_cards[2:3] + sorted_cards[0:2] + sorted_cards[3::]
-
         # list of card numbers and colors
         card_numbers = [card.number for card in sorted_cards]
 
         # largest card can be no more than ace
-        if sorted(card_numbers)[-1] > 14:
+        if max(card_numbers) > 14:
             return False, None
-        # if there are five unique numbers
-        if len(set(card_numbers)) == 5:
-            # no wild card:
-            if num_wildcards == 0:
-                if card_numbers[0] + 4 == card_numbers[4]:
-                    return True, sorted_cards
-                else:
-                    return False, None
-            if num_wildcards == 1:
-                first_four = [card_numbers[i]-card_numbers[0] for i in range(4)]
-
-                # i, i+1, i+2, i+3 wild
-                if first_four == [0, 1, 2, 3]:
-                    if card_numbers[3] <= 13:  # i+3 less than A
-                        return True, sorted_cards
-                    if card_numbers[3] == 14: # i+3 is A
-                        return True, sorted_cards[4::] + sorted_cards[0:3]
-                # i, i+1, i+2, i+4 wild
-                elif first_four == [0, 1, 2, 4]:
-                    return True,  sorted_cards[0:3] + sorted_cards[4::] + sorted_cards[3:4]
-                # i, i+1, i+3, i+4 wild
-                elif first_four == [0, 1, 3, 4]:
-                    return True, sorted_cards[0:2] + sorted_cards[4::] + sorted_cards[2:4]
-                # i, i+2, i+3, i+4 wild
-                elif first_four == [0, 2, 3, 4]:
-                    return True, sorted_cards[0:1] + sorted_cards[4::] + sorted_cards[1:4]
-                else:
-                    return False, None
-
-
-        # four or three unique card numbers
-        elif len(set(card_numbers)) == 4 or len(set(card_numbers)) == 3:
-            if num_wildcards == 2:
-                first_three = [card_numbers[i] - card_numbers[0] for i in range(3)]
-                # i, i+1, i+2, wild, wild
-                if first_three == [0, 1, 2]:
-                    if card_numbers[2] <= 12:  # i+2 less than K
-                        return True, sorted_cards
-                    if card_numbers[2] == 13:  # i+2 is K
-                        return True, [sorted_cards[-1]] + sorted_cards[1:4] + [sorted_cards[-2]]
-                    if card_numbers[2] == 14: # i+2 is A
-                        return True, sorted_cards[3::] + sorted_cards[1:4]
-                # i, i+2, i+3, wild, wild
-                elif first_three == [0, 2, 3]:
-                    if card_numbers[2] <= 13:  # i+3 less than A
-                        return True, [sorted_cards[0], sorted_cards[-1]] + sorted_cards[1:3] + [sorted_cards[-1]]
-                    if card_numbers[2] == 14:  # i+3 is A
-                        return True, [sorted_cards[-1], sorted_cards[0], sorted_cards[-1]] + sorted_cards[1:3]
-                # i, i+1, i+3, wild, wild
-                elif first_three == [0, 1, 3]:
-                    if card_numbers[2] <= 13:  # i+3 less than A
-                        return True, sorted_cards[0:2] + [sorted_cards[-1], sorted_cards[2]] + [sorted_cards[-1]]
-                    if card_numbers[2] == 14:  # i+3 is A
-                        return True, [sorted_cards[-1]] + sorted_cards[0:2] + [sorted_cards[-1], sorted_cards[2]]
-                # i, i+2, i+4, wild, wild
-                elif first_three == [0, 2, 4]:
-                    return True, sorted_cards[0:1] + [sorted_cards[-1]] + sorted_cards[1:2] + [sorted_cards[-1]] + sorted_cards[2:3]
-                else:
-                    return false, None
+        # no wildcards
+        if num_wildcards == 0:
+            if card_numbers[0] + 4 == card_numbers[4] and len(set(card_numbers)) == 5:
+                return True, sorted_cards
             else:
-                return False
+                return False, None
+        # one wildcard
+        elif num_wildcards == 1:
+            first_four = [card_numbers[i] - card_numbers[0] for i in range(4)]
+            # i, i+1, i+2, i+3 wild
+            if first_four == [0, 1, 2, 3]:
+                if card_numbers[3] <= 13:  # i+3 less than A
+                    return True, sorted_cards
+                if card_numbers[3] == 14:  # i+3 is A
+                    return True, sorted_cards[4::] + sorted_cards[0:3]
+            # i, i+1, i+2, i+4 wild
+            elif first_four == [0, 1, 2, 4]:
+                return True, sorted_cards[0:3] + sorted_cards[4::] + sorted_cards[3:4]
+            # i, i+1, i+3, i+4 wild
+            elif first_four == [0, 1, 3, 4]:
+                return True, sorted_cards[0:2] + sorted_cards[4::] + sorted_cards[2:4]
+            # i, i+2, i+3, i+4 wild
+            elif first_four == [0, 2, 3, 4]:
+                return True, sorted_cards[0:1] + sorted_cards[4::] + sorted_cards[1:4]
+            else:
+                return False, None
 
-        # less than three unique card numbers
-        else:
-            return False, None
-
+        # two wildcards
+        elif num_wildcards == 2:
+            first_three = [card_numbers[i] - card_numbers[0] for i in range(3)]
+            # i, i+1, i+2, wild, wild
+            if first_three == [0, 1, 2]:
+                if card_numbers[2] <= 12:  # i+2 less than K
+                    return True, sorted_cards
+                if card_numbers[2] == 13:  # i+2 is K
+                    return True, [sorted_cards[-1]] + sorted_cards[1:4] + [sorted_cards[-2]]
+                if card_numbers[2] == 14:  # i+2 is A
+                    return True, sorted_cards[3::] + sorted_cards[1:4]
+            # i, i+2, i+3, wild, wild
+            elif first_three == [0, 2, 3]:
+                if card_numbers[2] <= 13:  # i+3 less than A
+                    return True, [sorted_cards[0], sorted_cards[-1]] + sorted_cards[1:3] + [sorted_cards[-1]]
+                if card_numbers[2] == 14:  # i+3 is A
+                    return True, [sorted_cards[-1], sorted_cards[0], sorted_cards[-1]] + sorted_cards[1:3]
+            # i, i+1, i+3, wild, wild
+            elif first_three == [0, 1, 3]:
+                if card_numbers[2] <= 13:  # i+3 less than A
+                    return True, sorted_cards[0:2] + [sorted_cards[-1], sorted_cards[2]] + [sorted_cards[-1]]
+                if card_numbers[2] == 14:  # i+3 is A
+                    return True, [sorted_cards[-1]] + sorted_cards[0:2] + [sorted_cards[-1], sorted_cards[2]]
+            # i, i+2, i+4, wild, wild
+            elif first_three == [0, 2, 4]:
+                return True, sorted_cards[0:1] + [sorted_cards[-1]] + sorted_cards[1:2] + [
+                    sorted_cards[-1]] + sorted_cards[2:3]
+            else:
+                return false, None
 
     @staticmethod
     def is_bomb():
@@ -517,3 +520,211 @@ class Plate(CardComp):
     def is_bomb():
         return False
 
+
+class Tube(CardComp):
+    '''
+    Three consecutive Pairs
+    '''
+    def __init__(self, cards):
+        super().__init__(cards)
+        whether, sorted_cards = self.satisfy(cards)
+        assert whether
+        self.cards = sorted_cards
+
+    def greater_than(self, card_comp):
+        if not isinstance(card_comp, Tube):
+            return False
+        return self.cards[0].number > card_comp.cards[0].number
+
+    @staticmethod
+    def satisfy(cards):
+        if len(cards) != 6:
+            return False, None
+
+        # sort the card and make level card at proper position
+        sorted_cards = super(Tube, Tube).sort_no_level(cards)
+        num_wildcards = sum([card.is_wildcard() for card in sorted_cards])
+        # list of card numbers and colors
+        card_numbers = [card.number for card in sorted_cards]
+
+        # largest card can be no more than ace
+        if max(card_numbers) > 14:
+            return False, None
+        # no wildcards
+        if num_wildcards == 0:
+            # must be i, i, i+1, i+1, i+2, i+2
+            if len(set(card_numbers)) == 3:
+                temp = [card.number - sorted_cards[0].number for card in sorted_cards]
+                if temp == [0, 0, 1, 1, 2, 2]:
+                    return True, sorted_cards
+                else:
+                    return False, None
+            else:
+                return False, None
+
+        # one wildcard
+        elif num_wildcards == 1:
+            first_five = [card_numbers[i] - card_numbers[0] for i in range(5)]
+
+            if first_five == [0, 0, 1, 1, 2]: # i, i, i+1, i+1, i+2 wild
+                return True, sorted_cards
+            elif first_five == [0, 0, 1, 2, 2]: # i, i, i+1, i+2, i+2 wild
+                return True, sorted_cards[0:3] + [sorted_cards[-1]] + sorted_cards[3:5]
+            elif first_five == [0, 1, 1, 2, 2]: # i, i+1, i+1, i+2, i+2 wild
+                return True, sorted_cards[0:1] + [sorted_cards[-1]] + sorted_cards[1:5]
+            else:
+                return False, None
+
+        # two wildcards
+        elif num_wildcards == 2:
+            first_four = [card_numbers[i] - card_numbers[0] for i in range(4)]
+            # i, i, i+1, i+1, wild wild
+            if first_four == [0, 0, 1, 1]:
+                if sorted_cards[-3] < 14: # i+1 smaller than Ace
+                    return True, sorted_cards
+                else:
+                    return True, sorted_cards[4:6] + sorted_cards[0:4]
+            # i, i, i+2, i+2, wild, wild
+            elif first_four == [0, 0, 2, 2]:
+                return True, sorted_cards[0:2] + sorted_cards[4:6] + sorted_cards[2:4]
+            # i i i+1 i+2 wild wild
+            elif first_four == [0, 0, 1, 2]:
+                return True, sorted_cards[0:2] + [sorted_cards[2], sorted_cards[-1]] +[sorted_cards[3], sorted_cards[-2]]
+            # i i+1 i+1 i+2 wild wild
+            elif first_four == [0, 1, 1, 2]:
+                return True, [sorted_cards[0], sorted_cards[-1]] + sorted_cards[1:3] + [sorted_cards[3], sorted_cards[-2]]
+            # i i+1 i+2 i+2 wild wild
+            elif first_four == [0, 1, 2, 2]:
+                return True, [sorted_cards[0], sorted_cards[-1]] + [sorted_cards[1],sorted_cards[-2]] + sorted_cards[2:4]
+            else:
+                return False, None
+    @staticmethod
+    def is_bomb():
+        return False
+
+
+class Bomb(CardComp):
+    '''
+    At least Four Singles with same color
+    Straight Flush
+    Joker Bomb
+    '''
+    def __init__(self, cards):
+        super().__init__(cards)
+        whether, sorted_cards = self.satisfy(cards)
+        assert whether
+        self.cards = sorted_cards
+        self.type = None
+
+    def greater_than(self, card_comp):
+        # same type of bombs
+        if card_comp.type == self.type:
+            if self.type == "Straight Flush":
+                return self.cards[0].number > card_comp.cards[0].number
+            else:
+                return self.cards[0] > card_comp.cards[0]
+        # different type of bombs
+        if self.type == "JokerBomb":
+            return True
+        elif self.type == "8Singles":
+            return card_comp.type not in["JokerBomb"]
+        elif self.type == "7Singles":
+            return card_comp.type not in ["JokerBomb", "8Singles"]
+        elif self.type == "6Singles":
+            return card_comp.type not in ["JokerBomb", "8Singles", "7Singles"]
+        elif self.type == "Straight Flush":
+            return card_comp.type not in ["JokerBomb", "8Singles", "7Singles", "6Singles"]
+        elif self.type == "5Singles":
+            return card_comp.type not in ["JokerBomb", "8Singles", "7Singles", "6Singles", "Straight Flush"]
+        elif self.type == "4Singles":
+            return card_comp.type not in ["JokerBomb", "8Singles", "7Singles", "6Singles", "Straight Flush", "5Singles"]
+
+    def is_JokerBomb(self, cards):
+        if len(cards) != 4:
+            return False
+        elif sorted([card.number for card in cards] == [15, 15, 16, 16]):
+            return True, sorted(cards)
+        else:
+            return False, None
+
+    def is_BombOfSingles(self, cards, n):
+        # n is number of singles in the bomb, can be 4, 5, 6, 7, 8
+        sorted_cards = sorted(cards)
+        card_numbers = [card.number for card in sorted_cards]
+        num_wildcards = sum([card.is_wildcard() for card in sorted_cards])
+        if len(cards) != n:
+            return False, None
+        elif num_wildcards == 0 and len(set(card_numbers)) == 1:
+            return True, sorted_cards
+        elif num_wildcards == 1 and len(set(card_numbers[0:-1])) == 1:
+            return True, sorted_cards
+        elif num_wildcards == 2 and len(set(card_numbers[0:-2])) == 1:
+            return True, sorted_cards
+        else:
+            return False, None
+
+    def is_StraightFlush(self, cards):
+        sorted_cards = sorted(cards)
+        card_colors = [card.color for card in sorted_cards]
+        card_numbers = [card.number for card in sorted_cards]
+        num_wildcards = sum([card.is_wildcard() for card in sorted_cards])
+
+        if len(cards) != 5:
+            return False, None
+        else:
+            is_Straight, sorted_cards = Straight.satisfy(cards)
+            if is_Straight:
+                if num_wildcards == 0 and len(set(card_colors)) == 1:
+                    return True, sorted_cards
+                elif num_wildcards == 1 and len(set(card_colors[0:-1])) == 1:
+                    return True, sorted_cards
+                elif num_wildcards == 2 and len(set(card_colors[0:-2])) == 1:
+                    return True, sorted_cards
+                else:
+                    return False, None
+            else:
+                return False, None
+
+    @staticmethod
+    def satisfy(cards):
+        is_JokerBomb, sorted_cards = self.is_JokerBomb(cards)
+        if is_JokerBomb:
+            self.type = "JokerBomb"
+            return sorted_cards
+        # 8 same singles
+        is_BombOfSingles8, sorted_cards = self.is_BombOfSingles(cards, 8)
+        if is_BombOfSingles8:
+            self.type = "8Singles"
+            return sorted_cards
+        # 7 same singles
+        is_BombOfSingles7, sorted_cards = self.is_BombOfSingles(cards, 7)
+        if is_BombOfSingles7:
+            self.type = "7Singles"
+            return sorted_cards
+        # 6 same singles
+        is_BombOfSingles6, sorted_cards = self.is_BombOfSingles(cards, 6)
+        if is_BombOfSingles6:
+            self.type = "6Singles"
+            return sorted_cards
+
+        # Straight Flush
+        is_StraightFlush, sorted_cards = self.is_StraightFlush(cards)
+        if is_StraightFlush:
+            self.type = "StraightFlush"
+            return sorted_cards
+
+        # 5 same singles
+        is_BombOfSingles5, sorted_cards = self.is_BombOfSingles(cards, 5)
+        if is_BombOfSingles5:
+            self.type = "5Singles"
+            return sorted_cards
+
+        # 4 same singles
+        is_BombOfSingles4, sorted_cards = self.is_BombOfSingles(cards, 4)
+        if is_BombOfSingles4:
+            self.type = "4Singles"
+            return sorted_cards
+
+    @staticmethod
+    def is_bomb():
+        return True
