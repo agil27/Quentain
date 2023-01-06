@@ -1,5 +1,5 @@
 import unittest
-from logic import *
+from quentain import *
 import pickle
 import json
 

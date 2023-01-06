@@ -401,6 +401,10 @@
             {
               "cards": [[10, "Diamond"], [10, "Heart"], [10, "Club"], [10, "Spade"]],
               "type": "NaiveBomb"
+            },
+            {
+              "cards": [],
+              "type": "Fold"
             }
           ]
 }
