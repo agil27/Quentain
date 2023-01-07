@@ -14,7 +14,7 @@ import 'vfonts/FiraCode.css'
     <ul>
       <li>
         <RouterLink class="navlink" to="/">Join a game</RouterLink>
-        <RouterLink class="navlink" to="/about">Game Room</RouterLink>
+        <RouterLink class="navlink" to="/game">Game Room</RouterLink>
       </li>
     </ul>
   </nav>
@@ -34,7 +34,7 @@ export default defineComponent({
 
 <style scoped>
 nav {
-  background-color: #fff;
+  background-color: #fafafa;
   border-bottom: 1px solid #d3d3d3;
   display: flex;
   align-items: center;
