@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
 import 'vfonts/FiraSans.css'
 import 'vfonts/FiraCode.css'
 </script>
@@ -14,24 +13,28 @@ import 'vfonts/FiraCode.css'
     </div>
     <ul>
       <li>
-        <RouterLink class="navlink" to="/">Join a game</RouterLink>
-        <RouterLink class="navlink" to="/game">Game Room</RouterLink>
+        <a :class="{selected: !inGame}" to="/">Join a game</a>
+        <a :class="{selected: inGame}" to="/game">Game Room</a>
       </li>
     </ul>
   </nav>
-  <RouterView />
+  <start-view v-if="!inGame"/>
+  <game-view v-else />
 </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import StartView from '@/views/StartView.vue'
+import GameView from '@/views/GameView.vue'
 
-export default defineComponent({
+export default {
   data() {
     return {
+      inGame: true
     }
   },
-})
+}
 </script>
 
 <style scoped>
@@ -70,12 +73,7 @@ nav a {
   line-height: 32px;
 }
 
-nav a.router-link-exact-active:hover {
-  color: #6b2d92;
-  background-color: #f8f8f8;
-}
-
-nav a.router-link-exact-active {
+nav a.selected {
   color: #6b2d92;
   background-color: #eee;
 }

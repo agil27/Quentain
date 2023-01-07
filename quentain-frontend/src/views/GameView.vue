@@ -77,6 +77,9 @@ function get_location(color, number) {
 
 export default {
   name: 'MyCanvas',
+  props: [
+    'token'
+  ],
   data() {
     return {
       num_players: 4,
