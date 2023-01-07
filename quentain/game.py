@@ -2,8 +2,9 @@
 from .card import Card, colors, name_map
 from .comp import CardComp, IllegalComp
 import math
+import names
 import random
-from datetime import datetime
+import datetime
 
 
 class Game:
@@ -11,17 +12,29 @@ class Game:
     A single game with a certain level value
     '''
 
-    def __init__(self, level, first_player=0, experimental=False):
+    def __init__(self, level, first_player=0, experimental=False, token=''):
+        self.token = token
+        self.expiration_time = datetime.datetime.now() + datetime.timedelta(minutes=5)
         self.level = level
         self.distribute_cards(experimental)
         self.current_player = first_player
         self.prev_comp = None
         self.fold_num = 0
         self.winner = None
+        self.started = False
         self.finished = False
         self.ongoing_players = [0, 1, 2, 3]
+        self.player_names = {}
         self.finished_players = []
 
+    def add_player(self, player_name: str = None):
+        res = len(self.player_names)
+        if player_name is None:
+            self.player_names[res] = names.get_full_name()
+        else:
+            self.player_names[res] = player_name
+        return res
+            
     def distribute_cards(self, experimental=False):
         deck = []
         for color in colors:
@@ -30,7 +43,7 @@ class Game:
                              Card(number, color, self.level)])
         deck.extend([Card(15, 'Joker', self.level), Card(15, 'Joker', self.level),
                      Card(16, 'Joker', self.level), Card(16, 'Joker', self.level)])
-        random.seed(datetime.now().timestamp())
+        random.seed(datetime.datetime.now().timestamp())
         random.shuffle(deck)
         num_cards_per_player = 27 if not experimental else 7
         self.player_cards = [
@@ -116,3 +129,10 @@ class Game:
             message += ', '.join(f'{9 * j + i}: {c}' for i, c in enumerate(player_cards[9 * j: 9 * (j + 1)]))
             message += '\n'
         return message
+
+    def get_rank(self):
+        assert self.finished
+        rank = ''
+        for i in range(4):
+            rank += f'[{i + 1}] Player {self.player_names[self.finished_players[i]]}\n'
+        return rank

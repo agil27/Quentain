@@ -19,11 +19,13 @@ if __name__ == '__main__':
 
     print('============<Game Started>==============')
     while not game.finished:
-        print(f'\n============player {game.current_player + 1} cards============')
+        print(
+            f'\n============player {game.current_player + 1} cards============')
         player_cards = game.player_cards[game.current_player]
         num_lines = math.ceil(len(player_cards) / 9.0)
         for j in range(num_lines):
-            print(', '.join(f'{9 * j + i}: {c}' for i, c in enumerate(player_cards[9 * j: 9 * (j + 1)])))
+            print(', '.join(f'{9 * j + i}: {c}' for i,
+                  c in enumerate(player_cards[9 * j: 9 * (j + 1)])))
         print()
         succeed = False
         explanation = None
