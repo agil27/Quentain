@@ -1,7 +1,7 @@
 <script setup>
 import 'vfonts/FiraSans.css'
 import 'vfonts/FiraCode.css'
-import { NButton, NSpace, NIcon } from 'naive-ui'
+import { NButton, NSpace, NIcon, NAlert} from 'naive-ui'
 import { FistRaised } from '@vicons/fa'
 import { PlayCard } from '@vicons/tabler'
 </script>
@@ -12,7 +12,10 @@ import { PlayCard } from '@vicons/tabler'
       <canvas ref="canvas" width="2000" height="550"></canvas>
     </div>
     <div class="form">
-      <n-space align="center">
+      <n-alert v-if="(this.num_players < 4)" title="Game Not Ready" type="warning">
+        Waiting for {{4 - this.num_players}} to join...
+      </n-alert>
+      <n-space v-else align="center">
         <n-button strong secondary type="warning" size="large">
           <template #icon>
             <n-icon>
@@ -76,6 +79,7 @@ export default {
   name: 'MyCanvas',
   data() {
     return {
+      num_players: 4,
       items: [
         { color: 'Heart', number: 11, selected: false},
         { color: 'Spade', number: 1, selected: false},
@@ -115,6 +119,11 @@ export default {
       player_index: 0,
       turn: 3,
       text: "pass"
+    }
+  },
+  computed: {
+    margin() {
+      return this.num_players < 4 ? "20%" : "28%"
     }
   },
   mounted() {
@@ -246,7 +255,8 @@ export default {
 <style>
 @media (min-width: 1024px) {
   .canvas {
-    margin-top: 2%;
+    margin-left: 0;
+    margin-top: 0;
     margin-bottom: 1%;
     display: flex;
     align-items: center;
@@ -258,6 +268,10 @@ export default {
     margin-left: 28%;
     margin-bottom: 3%;
     align-items: center;
+  }
+  
+  .container {
+    margin-top: 2%;
   }
 }
 </style>

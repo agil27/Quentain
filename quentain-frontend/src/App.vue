@@ -6,6 +6,7 @@ import 'vfonts/FiraCode.css'
 </script>
 
 <template>
+<div class="main">
   <nav>
     <div class="logo">
       <img class="logoimg" src="@/assets/logo.svg" alt="Logo" height="50">
@@ -19,6 +20,7 @@ import 'vfonts/FiraCode.css'
     </ul>
   </nav>
   <RouterView />
+</div>
 </template>
 
 <script lang="ts">
