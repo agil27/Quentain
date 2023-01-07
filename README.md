@@ -23,3 +23,27 @@ python  cli.py <-e/--exp>
 The argument `-e` or `--exp` is to turn on the experimental debug version, where each player gets 7 cards instead of 27.
 
 <img src='img/cli.gif'>
+
+## Local server version
+
+* To start game engine locally:
+
+```bash
+cd quentian
+flask run --port=8080
+```
+
+* To start a new game (with level 2):
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"level": 2}' http://localhost:8080/start_game
+```
+
+* To check the current game state:
+```bash
+curl http://localhost:8080/get_game_state
+```
+
+* To throw cards if it is your turn:
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"choices": [<your choices, seperated by comma>]}' http://localhost:8080/throw_cards
+```

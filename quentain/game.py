@@ -1,6 +1,7 @@
 # A single game with four players
 from .card import Card, colors, name_map
 from .comp import CardComp, IllegalComp
+import math
 import random
 from datetime import datetime
 
@@ -105,3 +106,13 @@ class Game:
             # go to next player
             self.current_player = next_player
             return True, comp
+
+    def get_game_state(self, player):
+        message = ''
+        player_cards = self.player_cards[player]
+            
+        num_lines = math.ceil(len(player_cards) / 9.0)
+        for j in range(num_lines):
+            message += ', '.join(f'{9 * j + i}: {c}' for i, c in enumerate(player_cards[9 * j: 9 * (j + 1)]))
+            message += '\n'
+        return message
