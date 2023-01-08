@@ -7,8 +7,11 @@ import string
 import threading
 from quentain.game import Game
 import quentain
+from flask_cors import CORS, cross_origin
+
 
 app = Flask(__name__)
+CORS(app)
 
 conn = sqlite3.connect("game.db", check_same_thread=False)
 cursor = conn.cursor()
@@ -40,6 +43,7 @@ def generate_token():
 
 
 @app.route('/new_game', methods=['POST'])
+@cross_origin()
 def new_game():
     status = -1
     while status != 0:
@@ -63,6 +67,7 @@ def add_player_to_game(game, player_name=''):
 
 
 @app.route('/join_game/<token>', methods=['POST'])
+@cross_origin()
 def join_game(token):
     # Validate the token
     game = get_game(token)
@@ -81,6 +86,7 @@ def join_game(token):
 
 
 @app.route('/start_game/<token>', methods=['POST'])
+@cross_origin()
 def start_game(token):
     # Retrieve the game from the database
     game = get_game(token)
@@ -98,6 +104,7 @@ def start_game(token):
 
 
 @app.route('/get_game_state/<token>', methods=['GET'])
+@cross_origin()
 def get_game_state(token):
     # Get the player's game from the database or cache
     game = get_game(token)
@@ -109,6 +116,7 @@ def get_game_state(token):
 
 
 @app.route('/throw_cards/<token>', methods=['POST'])
+@cross_origin()
 def throw_cards(token):
     data = request.get_json()
     player_number = data.get('player_number')
