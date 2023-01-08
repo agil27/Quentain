@@ -31,7 +31,7 @@ import GameView from '@/views/GameView.vue'
 export default {
   data() {
     return {
-      inGame: true
+      inGame: false
     }
   },
 }

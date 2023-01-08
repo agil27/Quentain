@@ -7,8 +7,11 @@ import string
 import threading
 from quentain.game import Game
 import quentain
+from flask_cors import CORS, cross_origin
+
 
 app = Flask(__name__)
+CORS(app)
 
 conn = sqlite3.connect('game.db', check_same_thread=False)
 cursor = conn.cursor()
@@ -40,6 +43,7 @@ def generate_token():
 
 
 @app.route('/new_game', methods=['POST'])
+@cross_origin()
 def new_game():
     status = -1
     while status != 0:
@@ -47,7 +51,7 @@ def new_game():
         token = generate_token()
         data = request.get_json()
         # Extract the level from the data
-        level = data.get('level')
+        level = int(data.get('level'))
         # Initialize the game with the player's name
         game = Game(level=level, token=token)
         # Store the game in a database
@@ -63,6 +67,7 @@ def add_player_to_game(game, player_name=''):
 
 
 @app.route('/join_game/<token>', methods=['POST'])
+@cross_origin()
 def join_game(token):
     # Validate the token
     game = get_game(token)
@@ -73,10 +78,12 @@ def join_game(token):
 
     # Add the player to the game in the database
     number = add_player_to_game(game)
+    print(jsonify({'player_number': number}))
     return jsonify({'player_number': number}), 200
 
 
 @app.route('/start_game/<token>', methods=['POST'])
+@cross_origin()
 def start_game(token):
     # Retrieve the game from the database
     game = get_game(token)
@@ -94,6 +101,7 @@ def start_game(token):
 
 
 @app.route('/get_game_state/<token>', methods=['GET'])
+@cross_origin()
 def get_game_state(token):
     # Get the player's game from the database or cache
     game = get_game(token)
@@ -105,6 +113,7 @@ def get_game_state(token):
 
 
 @app.route('/throw_cards/<token>', methods=['POST'])
+@cross_origin()
 def throw_cards(token):
     data = request.get_json()
     player_number = data.get('player_number')

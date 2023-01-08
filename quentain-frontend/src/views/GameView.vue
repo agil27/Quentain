@@ -120,8 +120,8 @@ export default {
         { color: 'Joker', number: 16, selected: false},
       ],
       player_index: 0,
-      turn: 3,
-      text: "pass"
+      turn: 0,
+      text: "turn"
     }
   },
   computed: {
