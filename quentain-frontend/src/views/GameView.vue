@@ -100,7 +100,7 @@ export default {
       alertTitle: 'Game not ready',
       alertType: 'warning',
       alertContent: 'Waiting for others to join...',
-      started: false,
+      started: 0,
       game: null
     }
   },
@@ -295,7 +295,7 @@ export default {
           }, 3000)
         }
       },
-      immediate: true
+      immediate: true,
     }
   },
   mounted() {
