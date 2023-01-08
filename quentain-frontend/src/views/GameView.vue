@@ -25,7 +25,7 @@ import axios from 'axios'
           </template>
           Throw
         </n-button>
-        <n-button strong secondary type="success" size="large">
+        <n-button strong secondary type="success" size="large" @click="throw_cards">
           <template #icon>
             <n-icon>
               <fist-raised />
