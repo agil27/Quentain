@@ -1,6 +1,11 @@
 # Quentain
 An implementation of the Poker Game Guandan popular among Jiangsu and Anhui in China
 
+## Dependency
+
+- `Node.js`: `vue`, `naive-ui`, `axios`
+- `Python`: `flask`, `flask-cors`
+
 ## Rule
 According to https://en.wikipedia.org/wiki/Guandan
 

@@ -9,7 +9,7 @@ import { PlayCard } from '@vicons/tabler'
 <template>
   <div class="container">
     <div class="canvas">
-      <canvas ref="canvas" width="2000" height="550"></canvas>
+      <canvas ref="canvas" width="1200" height="550"></canvas>
     </div>
     <div class="form">
       <n-alert v-if="(this.num_players < 4)" title="Game Not Ready" type="warning">
@@ -132,7 +132,7 @@ export default {
   },
   computed: {
     margin() {
-      return this.num_players < 4 ? "20%" : "28%"
+      return this.num_players < 4 ? "38%" : "45%"
     }
   },
   mounted() {
@@ -274,7 +274,7 @@ export default {
   .form {
     display: flex;
     margin-top: 0;
-    margin-left: 28%;
+    margin-left: 45%;
     margin-bottom: 3%;
     align-items: center;
   }
