@@ -78,7 +78,9 @@ def join_game(token):
 
     # Add the player to the game in the database
     number = add_player_to_game(game)
-
+    if (number == 3):
+        game.started = True
+        update_game(game)
     if number < 4:
         return jsonify({"player_number": number}), 200
     else:
@@ -115,6 +117,31 @@ def get_game_state(token):
         return jsonify({"finished": game.finished, "rank": game.get_rank()}), 200
 
 
+def gen_game_state(game, player):
+    if not game.finished:
+        return {
+            'turn': game.current_player,
+            'deck': None if not game.started else [c.json_encode() for c in game.player_cards[player]],
+            'comp': [] if game.prev_comp is None else [c.json_encode() for c in game.prev_comp.cards],
+            'started': game.started
+        }
+    else:
+        return {
+            "finished": game.finished,
+            "rank": game.get_rank()
+        }
+
+
+# Yuanbiao: I added this cuz I want a JSON object returned
+# instead of a string that needs to be parsed...
+@app.route('/game_state/<token>/<player_id>', methods=['GET'])
+@cross_origin()
+def game_state(token, player_id):
+    # Get the player's game from the database or cache
+    game = get_game(token)
+    return jsonify(gen_game_state(game, int(player_id))), 200
+
+
 @app.route('/throw_cards/<token>', methods=['POST'])
 @cross_origin()
 def throw_cards(token):
@@ -122,6 +149,7 @@ def throw_cards(token):
     player_number = data.get('player_number')
     choices = data.get('choices')
     choices = [int(x) for x in choices]
+    
     game = get_game(token)
 
     if game.finished:
@@ -138,6 +166,35 @@ def throw_cards(token):
             return jsonify({"folded": True}), 200
         else:
             return jsonify({"thrown_cards": str(explanation)}), 200
+    else:
+        return jsonify({"error": explanation}), 401
+
+
+# Again added this for the frontend
+@app.route('/throw_comp/<token>', methods=['POST'])
+@cross_origin()
+def throw_comp(token):
+    data = request.get_json()
+    player_number = data.get('player_number')
+    choices = data.get('choices')
+    choices = [int(x) for x in choices]
+    game = get_game(token)
+
+    if game.finished:
+        return jsonify({"finished": True}), 401
+    if not game.started:
+        return 'Game has not started', 401
+    if player_number != game.current_player:
+        return 'Not your turn', 401
+
+    succeed, explanation = game.throw_cards(choices)
+    update_game(game)
+    if succeed:
+        return jsonify({
+            "comp": [c.json_encode() for c in explanation.cards],
+            "deck": [c.json_encode() for c in game.player_cards[player_number]],
+            "turn": game.current_player
+        }), 200
     else:
         return jsonify({"error": explanation}), 401
 
