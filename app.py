@@ -7,10 +7,13 @@ import string
 import threading
 from quentain.game import Game
 import quentain
+from flask_cors import CORS, cross_origin
+
 
 app = Flask(__name__)
+CORS(app)
 
-conn = sqlite3.connect('game.db', check_same_thread=False)
+conn = sqlite3.connect("game.db", check_same_thread=False)
 cursor = conn.cursor()
 
 # Create the game_rooms table if it doesn't exist
@@ -40,6 +43,7 @@ def generate_token():
 
 
 @app.route('/new_game', methods=['POST'])
+@cross_origin()
 def new_game():
     status = -1
     while status != 0:
@@ -47,13 +51,13 @@ def new_game():
         token = generate_token()
         data = request.get_json()
         # Extract the level from the data
-        level = data.get('level')
+        level = data.get("level")
         # Initialize the game with the player's name
         game = Game(level=level, token=token)
         # Store the game in a database
         status = store_game(game)
 
-    return jsonify({'token': token}), 200
+    return jsonify({"token": token}), 200
 
 
 def add_player_to_game(game, player_name=''):
@@ -63,57 +67,93 @@ def add_player_to_game(game, player_name=''):
 
 
 @app.route('/join_game/<token>', methods=['POST'])
+@cross_origin()
 def join_game(token):
     # Validate the token
     game = get_game(token)
     if game is None:
-        return 'Game not found', 404
+        return "Game not found", 404
     if game.token != token:
-        return 'Invalid token', 401
+        return "Invalid token", 401
 
     # Add the player to the game in the database
     number = add_player_to_game(game)
-    return jsonify({'player_number': number}), 200
+    if (number == 3):
+        game.started = True
+        update_game(game)
+    if number < 4:
+        return jsonify({"player_number": number}), 200
+    else:
+        return "Room Full!", 401
 
 
 @app.route('/start_game/<token>', methods=['POST'])
+@cross_origin()
 def start_game(token):
     # Retrieve the game from the database
     game = get_game(token)
     if game is None:
-        return 'Game not found', 404
+        return "Game not found", 404
 
     # Check if all players have joined
     if len(game.player_names) < len(game.ongoing_players):
-        return 'Not all players have joined', 400
+        return "Not all players have joined", 400
 
     # Start the game
     game.started = True
     update_game(game)
-    return 'Game started!', 204
+    return "Game started!", 204
 
 
 @app.route('/get_game_state/<token>', methods=['GET'])
+@cross_origin()
 def get_game_state(token):
     # Get the player's game from the database or cache
     game = get_game(token)
     if not game.finished:
         # Return the game state
-        return jsonify({'current_player': game.current_player, 'game_state': game.get_game_state(game.current_player)}), 200
+        return jsonify({"current_player": game.current_player, "started": game.started,"game_state": game.get_game_state(game.current_player)}), 200
     else:
-        return jsonify({'finished': game.finished, 'rank': game.get_rank()}), 200
+        return jsonify({"finished": game.finished, "rank": game.get_rank()}), 200
+
+
+def gen_game_state(game, player):
+    if not game.finished:
+        return {
+            'turn': game.current_player,
+            'deck': None if not game.started else [c.json_encode() for c in game.player_cards[player]],
+            'comp': [] if game.prev_comp is None else [c.json_encode() for c in game.prev_comp.cards],
+            'started': game.started
+        }
+    else:
+        return {
+            "finished": game.finished,
+            "rank": game.get_rank()
+        }
+
+
+# Yuanbiao: I added this cuz I want a JSON object returned
+# instead of a string that needs to be parsed...
+@app.route('/game_state/<token>/<player_id>', methods=['GET'])
+@cross_origin()
+def game_state(token, player_id):
+    # Get the player's game from the database or cache
+    game = get_game(token)
+    return jsonify(gen_game_state(game, int(player_id))), 200
 
 
 @app.route('/throw_cards/<token>', methods=['POST'])
+@cross_origin()
 def throw_cards(token):
     data = request.get_json()
     player_number = data.get('player_number')
     choices = data.get('choices')
     choices = [int(x) for x in choices]
+    
     game = get_game(token)
 
     if game.finished:
-        return jsonify({'finished': True}), 401
+        return jsonify({"finished": True}), 401
     if not game.started:
         return 'Game has not started', 401
     if player_number != game.current_player:
@@ -123,11 +163,40 @@ def throw_cards(token):
     update_game(game)
     if succeed:
         if isinstance(explanation, quentain.Fold):
-            return jsonify({'folded': True}), 200
+            return jsonify({"folded": True}), 200
         else:
-            return jsonify({'thrown_cards': str(explanation)}), 200
+            return jsonify({"thrown_cards": str(explanation)}), 200
     else:
-        return jsonify({'error': explanation}), 401
+        return jsonify({"error": explanation}), 401
+
+
+# Again added this for the frontend
+@app.route('/throw_comp/<token>', methods=['POST'])
+@cross_origin()
+def throw_comp(token):
+    data = request.get_json()
+    player_number = data.get('player_number')
+    choices = data.get('choices')
+    choices = [int(x) for x in choices]
+    game = get_game(token)
+
+    if game.finished:
+        return jsonify({"finished": True}), 401
+    if not game.started:
+        return 'Game has not started', 401
+    if player_number != game.current_player:
+        return 'Not your turn', 401
+
+    succeed, explanation = game.throw_cards(choices)
+    update_game(game)
+    if succeed:
+        return jsonify({
+            "comp": [c.json_encode() for c in explanation.cards],
+            "deck": [c.json_encode() for c in game.player_cards[player_number]],
+            "turn": game.current_player
+        }), 200
+    else:
+        return jsonify({"error": explanation}), 401
 
 
 def store_game(game):

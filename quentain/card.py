@@ -84,3 +84,10 @@ class Card:
 
     def __repr__(self):
         return str(self)
+
+    def json_encode(self):
+        return {
+            'color': self.color,
+            'number': self.raw_number,
+            'selected': False
+        }

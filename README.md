@@ -1,6 +1,11 @@
 # Quentain
 An implementation of the Poker Game Guandan popular among Jiangsu and Anhui in China
 
+## Dependency
+
+- `Node.js`: `vue`, `naive-ui`, `axios`
+- `Python`: `flask`, `flask-cors`
+
 ## Rule
 According to https://en.wikipedia.org/wiki/Guandan
 
@@ -45,20 +50,49 @@ The current demo looks like this. The implementation is based on `HTML5 canvas`.
 
 ```bash
 cd quentian
-flask run --port=8080
+flask run --port=5000
+
+# or
+python app.py
 ```
 
 * To start a new game (with level 2):
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"level": 2}' http://localhost:8080/start_game
+curl -X POST -H "Content-Type: application/json" -d '{"level": 2}' http://localhost:5000/new_game
 ```
 
-* To check the current game state:
+* To join a game with token <token>:
 ```bash
-curl http://localhost:8080/get_game_state
+curl -X POST http://localhost:5000/join_game/<token>
 ```
 
-* To throw cards if it is your turn:
+* To start a game with token <token>:
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"choices": [<your choices, seperated by comma>]}' http://localhost:8080/throw_cards
+curl -X POST http://localhost:5000/start_game/<token>
+# Note: a game can only be started after all four players have joined
 ```
+
+* To check the current game state with token <token>:
+```bash
+curl http://localhost:5000/get_game_state/<token>
+```
+
+* To let player <player_number> throw cards in game with token <token>:
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"player_number":<player_number>, "choices": [<your choices, seperated by comma>]}' http://localhost:5000/throw_cards/<token>
+```
+
+## Test Local server version
+
+Test game with four players locally:
+
+First initialize a new game in one window and get the token:
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"level": 2}' http://localhost:5000/new_game
+```
+In each of four windows, run the following command:
+
+```bash
+python game_test.py
+```
+
