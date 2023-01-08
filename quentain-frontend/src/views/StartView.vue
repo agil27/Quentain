@@ -46,6 +46,7 @@ export default {
         const response = await axios.post('http://localhost:5050/join_game/' + this.token, {})
         this.player_id = response.data.player_number
         console.log(this.player_id)
+        this.$emit('joinGame', this.player_id, this.token)
       } catch (error) {
         console.log(error)
         this.failError = error

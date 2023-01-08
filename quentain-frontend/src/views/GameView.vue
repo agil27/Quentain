@@ -77,9 +77,16 @@ function get_location(color, number) {
 
 export default {
   name: 'MyCanvas',
-  props: [
-    'token'
-  ],
+  props: {
+    token: {
+      type: String,
+      required: true
+    },
+    player_id: {
+      type: Number,
+      required: true
+    }
+  },
   data() {
     return {
       num_players: 4,
@@ -119,7 +126,6 @@ export default {
         { color: 'Joker', number: 15, selected: false},
         { color: 'Joker', number: 16, selected: false},
       ],
-      player_index: 0,
       turn: 0,
       text: "turn"
     }
@@ -165,7 +171,7 @@ export default {
       })
 
       // draw turn sign
-      let visual_idx = (this.turn + this.player_index) % 4
+      let visual_idx = (this.turn + this.player_id) % 4
       if (this.text === "pass") {
         ctx.fillStyle = '#4db6ac'
       } else {

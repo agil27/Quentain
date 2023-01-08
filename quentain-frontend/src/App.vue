@@ -18,8 +18,8 @@ import 'vfonts/FiraCode.css'
       </li>
     </ul>
   </nav>
-  <start-view v-if="!inGame"/>
-  <game-view v-else />
+  <start-view v-if="!inGame" @joinGame="join_game" />
+  <game-view v-else :player_id="player_id" :token="token"/>
 </div>
 </template>
 
@@ -29,11 +29,24 @@ import StartView from '@/views/StartView.vue'
 import GameView from '@/views/GameView.vue'
 
 export default {
+  components: {
+    StartView,
+    GameView
+  },
   data() {
     return {
-      inGame: false
+      inGame: false,
+      player_id: -1,
+      token: ''
     }
   },
+  methods: {
+    join_game(player_id, token) {
+      this.player_id = player_id
+      this.token = token
+      this.inGame = true
+    }
+  }
 }
 </script>
 
