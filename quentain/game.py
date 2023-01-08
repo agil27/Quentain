@@ -84,6 +84,8 @@ class Game:
             current_player_cards = self.player_cards[self.current_player]
             selected_cards = [current_player_cards[i] for i in card_indices]
             comp = CardComp.from_card_list(selected_cards, self.prev_comp)
+            if isinstance(comp, IllegalComp):
+                return False, 'Illegal Composition!'
             if self.prev_comp is None or comp.greater_than(self.prev_comp):
                 self.prev_comp = comp
                 cards_after_throw = [
@@ -96,10 +98,7 @@ class Game:
                 # reset the fold num
                 self.fold_num = 0
             else:
-                if self.prev_comp is None:
-                    return False, 'Illegal Composition!'
-                else:
-                    return False, 'This composition cannot beat the previous!'
+                return False, 'This composition cannot beat the previous!'
 
             # find next player
             current_player_index = self.ongoing_players.index(self.current_player)
