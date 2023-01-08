@@ -25,7 +25,7 @@ import axios from 'axios'
           </template>
           Throw
         </n-button>
-        <n-button strong secondary type="success" size="large">
+        <n-button strong secondary type="success" size="large" @click="throw_cards">
           <template #icon>
             <n-icon>
               <fist-raised />
@@ -230,14 +230,16 @@ export default {
       })
       }
     },
-    throw_cards() {
+    throw_cards(event) {
       if (this.turn === this.player_id) {
         let choices = []
-        this.deck.forEach((card, index) => {
-          if (card.selected) {
-            choices.push(index)
-          }
-        })
+        if (event.target.textContent != 'pass') {
+          this.deck.forEach((card, index) => {
+            if (card.selected) {
+              choices.push(index)
+            }
+          })
+        }
         axios.post('http://localhost:5050/throw_comp/' + this.token, {
           player_number: this.player_id,
           choices: choices

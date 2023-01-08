@@ -1,4 +1,7 @@
 from flask import Flask, jsonify, render_template, redirect, request, url_for
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
 import datetime
 import pickle
 import random
@@ -12,7 +15,12 @@ from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
 CORS(app)
-
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["2000 per day", "400 per minute"],
+    storage_uri="memory://",
+)
 conn = sqlite3.connect("game.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -44,6 +52,7 @@ def generate_token():
 
 @app.route('/new_game', methods=['POST'])
 @cross_origin()
+@limiter.limit("10 per minute")  # Limit to 10 requests per minute, returns 429 if too many requests from a client
 def new_game():
     status = -1
     while status != 0:
