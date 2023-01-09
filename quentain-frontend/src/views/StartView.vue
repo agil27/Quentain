@@ -37,8 +37,10 @@ export default {
         })
         this.joinGame = true;
         this.token = response.data.token
+        this.failError = ''
       } catch (error) {
         console.error(error)
+        this.failError = error.response.data
       }
     },
     async join_game() {
@@ -47,9 +49,10 @@ export default {
         this.player_id = response.data.player_number
         console.log(this.player_id)
         this.$emit('joinGame', this.player_id, this.token)
+        this.failError = ''
       } catch (error) {
         console.log(error)
-        this.failError = error
+        this.failError = error.response.data
       }
     }
   },

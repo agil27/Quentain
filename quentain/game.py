@@ -46,7 +46,7 @@ class Game:
                      Card(16, 'Joker', self.level), Card(16, 'Joker', self.level)])
         random.seed(datetime.datetime.now().timestamp())
         random.shuffle(deck)
-        num_cards_per_player = 27 if not experimental else 7
+        num_cards_per_player = 27 if not experimental else 4
         self.player_cards = [
             deck[i * num_cards_per_player : (i + 1) * num_cards_per_player]
             for i in range(4)
@@ -132,9 +132,16 @@ class Game:
             message += '\n'
         return message
 
-    def get_rank(self):
+    def get_rank_str(self):
         assert self.finished
         rank = ''
         for i in range(4):
             rank += f'[{i + 1}] Player {self.player_names[self.finished_players[i]]}\n'
+        return rank
+
+    def get_rank(self):
+        assert self.finished
+        rank = [-1, -1, -1, -1]
+        for i in range(4):
+            rank[self.finished_players[i]] = i + 1
         return rank

@@ -20,7 +20,7 @@ CORS(app)
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["1000000 per day", "4000 per minute"],
+    default_limits=["500 per minute"],
     storage_uri="memory://",
 )
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
@@ -68,7 +68,7 @@ def new_game():
         # Extract the level from the data
         level = data.get("level")
         # Initialize the game with the player's name
-        game = Game(level=level, token=token)
+        game = Game(level=level, token=token, experimental=False)
         # Store the game in a database
         status = store_game(game)
 
@@ -87,9 +87,9 @@ def join_game(token):
     # Validate the token
     game = get_game(token)
     if game is None:
-        return "Game not found", 404
+        return jsonify({'reason': "Game not found"}), 404
     if game.token != token:
-        return "Invalid token", 401
+        return jsonify({'reason': "Invalid token"}), 401
 
     # Add the player to the game in the database
     number = add_player_to_game(game)
@@ -99,7 +99,7 @@ def join_game(token):
     if number < 4:
         return jsonify({"player_number": number}), 200
     else:
-        return "Room Full!", 401
+        return jsonify({'reason': "Room Full!"}), 401
 
 
 @app.route('/start_game/<token>', methods=['POST'])
@@ -129,7 +129,7 @@ def get_game_state(token):
         # Return the game state
         return jsonify({"current_player": game.current_player, "started": game.started,"game_state": game.get_game_state(game.current_player)}), 200
     else:
-        return jsonify({"finished": game.finished, "rank": game.get_rank()}), 200
+        return jsonify({"finished": game.finished, "rank": game.get_rank_str()}), 200
 
 
 def gen_game_state(game, player):
@@ -139,7 +139,9 @@ def gen_game_state(game, player):
             'deck': None if not game.started else [c.json_encode() for c in game.player_cards[player]],
             'comp': [] if game.prev_comp is None else [c.json_encode() for c in game.prev_comp.cards],
             'started': game.started,
-            'player_comp': [[c.json_encode() for c in comp.cards] if comp is not None else None for comp in game.player_comps]
+            'player_comp': [[c.json_encode() for c in comp.cards] if comp is not None else None for comp in game.player_comps],
+            'finished_players': game.finished_players,
+            'finished': game.finished
         }
     else:
         return {
@@ -198,11 +200,11 @@ def throw_comp(token):
     game = get_game(token)
 
     if game.finished:
-        return jsonify({"finished": True}), 401
+        return jsonify({"error": 'game finished'}), 401
     if not game.started:
-        return 'Game has not started', 401
+        return jsonify({'error': 'Game has not started'}), 401
     if player_number != game.current_player:
-        return 'Not your turn', 401
+        return jsonify({'error': 'Not your turn'}), 401
 
     succeed, explanation = game.throw_cards(choices)
     update_game(game)
