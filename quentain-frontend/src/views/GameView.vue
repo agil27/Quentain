@@ -100,7 +100,7 @@ export default {
       alertTitle: 'Game not ready',
       alertType: 'warning',
       alertContent: 'Waiting for others to join...',
-      started: false,
+      started: 0,
       game: null
     }
   },
@@ -276,7 +276,7 @@ export default {
           }
           setInterval(() => {
             axios.get(
-              'http://localhost:5050/game_state/' + this.token + '/' + this.player_id
+              'http://localhost:5050/get_player_game_state/' + this.token + '/' + this.player_id
             ).then(response => {
               let game = response.data
               if (game.started !== this.started) {
@@ -297,7 +297,7 @@ export default {
           }, 3000)
         }
       },
-      immediate: true
+      immediate: true,
     }
   },
   mounted() {

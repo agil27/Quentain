@@ -4,7 +4,7 @@ An implementation of the Poker Game Guandan popular among Jiangsu and Anhui in C
 ## Dependency
 
 - `Node.js`: `vue`, `naive-ui`, `axios`
-- `Python`: `flask`, `flask-cors`
+- `Python`: `flask`, `flask-cors`, `flask-limiter`, `flask-cache`
 
 ## Rule
 According to https://en.wikipedia.org/wiki/Guandan
@@ -81,3 +81,18 @@ curl http://localhost:5000/get_game_state/<token>
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{"player_number":<player_number>, "choices": [<your choices, seperated by comma>]}' http://localhost:5000/throw_cards/<token>
 ```
+
+## Test Local server version
+
+Test game with four players locally:
+
+First initialize a new game in one window and get the token:
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"level": 2}' http://localhost:5000/new_game
+```
+In each of four windows, run the following command:
+
+```bash
+python game_test.py
+```
+
