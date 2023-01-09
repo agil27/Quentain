@@ -23,9 +23,12 @@ limiter = Limiter(
     default_limits=["2000 per day", "400 per minute"],
     storage_uri="memory://",
 )
+<<<<<<< HEAD
+=======
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 # Initiate db connections
+>>>>>>> origin/main
 conn = sqlite3.connect("game.db", check_same_thread=False)
 cursor = conn.cursor()
 

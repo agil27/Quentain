@@ -230,14 +230,16 @@ export default {
       })
       }
     },
-    throw_cards() {
+    throw_cards(event) {
       if (this.turn === this.player_id) {
         let choices = []
-        this.deck.forEach((card, index) => {
-          if (card.selected) {
-            choices.push(index)
-          }
-        })
+        if (event.target.textContent != 'pass') {
+          this.deck.forEach((card, index) => {
+            if (card.selected) {
+              choices.push(index)
+            }
+          })
+        }
         axios.post('http://localhost:5050/throw_comp/' + this.token, {
           player_number: this.player_id,
           choices: choices
