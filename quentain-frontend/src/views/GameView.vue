@@ -25,7 +25,7 @@ import axios from 'axios'
           </template>
           Throw
         </n-button>
-        <n-button strong secondary type="success" size="large">
+        <n-button strong secondary type="success" size="large" @click="throw_cards">
           <template #icon>
             <n-icon>
               <fist-raised />
@@ -274,7 +274,7 @@ export default {
           }
           setInterval(() => {
             axios.get(
-              'http://localhost:5050/game_state/' + this.token + '/' + this.player_id
+              'http://localhost:5050/get_player_game_state/' + this.token + '/' + this.player_id
             ).then(response => {
               let game = response.data
               if (game.started !== this.started) {
