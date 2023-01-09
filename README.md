@@ -4,7 +4,7 @@ An implementation of the Poker Game Guandan popular among Jiangsu and Anhui in C
 ## Dependency
 
 - `Node.js`: `vue`, `naive-ui`, `axios`
-- `Python`: `flask`, `flask-cors`, `flask-limiter`
+- `Python`: `flask`, `flask-cors`, `flask-limiter`, `flask-cache`
 
 ## Rule
 According to https://en.wikipedia.org/wiki/Guandan

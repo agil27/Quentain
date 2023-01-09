@@ -274,7 +274,7 @@ export default {
           }
           setInterval(() => {
             axios.get(
-              'http://localhost:5050/game_state/' + this.token + '/' + this.player_id
+              'http://localhost:5050/get_player_game_state/' + this.token + '/' + this.player_id
             ).then(response => {
               let game = response.data
               if (game.started !== this.started) {

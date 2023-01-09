@@ -1,4 +1,6 @@
-from flask import Flask, jsonify, render_template, redirect, request, url_for
+from flask import Flask, jsonify, request
+from flask_caching import Cache
+from flask_cors import CORS, cross_origin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -10,9 +12,9 @@ import string
 import threading
 from quentain.game import Game
 import quentain
-from flask_cors import CORS, cross_origin
 
 
+# Initiate flask app
 app = Flask(__name__)
 CORS(app)
 limiter = Limiter(
@@ -21,6 +23,9 @@ limiter = Limiter(
     default_limits=["2000 per day", "400 per minute"],
     storage_uri="memory://",
 )
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+
+# Initiate db connections
 conn = sqlite3.connect("game.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -143,9 +148,10 @@ def gen_game_state(game, player):
 
 # Yuanbiao: I added this cuz I want a JSON object returned
 # instead of a string that needs to be parsed...
-@app.route('/game_state/<token>/<player_id>', methods=['GET'])
+# Sherry: change this to get_player_game_state to make the name more explanable
+@app.route('/get_player_game_state/<token>/<player_id>', methods=['GET'])
 @cross_origin()
-def game_state(token, player_id):
+def get_player_game_state(token, player_id):
     # Get the player's game from the database or cache
     game = get_game(token)
     return jsonify(gen_game_state(game, int(player_id))), 200
@@ -230,7 +236,7 @@ def store_game(game):
     conn.commit()
     return 0
 
-
+@cache.memoize(20) # cache for 20 seconds
 def get_game(token):
     # Open the file in read binary mode
     cursor.execute('''
@@ -266,6 +272,7 @@ def get_game(token):
 
 
 def update_game(game):
+    cache.delete_memoized(get_game, game.token)
     ongoing_players_blob = sqlite3.Binary(pickle.dumps(game.ongoing_players))
     player_names_blob = sqlite3.Binary(pickle.dumps(game.player_names))
     finished_players_blob = sqlite3.Binary(pickle.dumps(game.finished_players))
