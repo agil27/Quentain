@@ -26,6 +26,7 @@ class Game:
         self.ongoing_players = [0, 1, 2, 3]
         self.player_names = {}
         self.finished_players = []
+        self.player_comps = [None, None, None, None]
 
     def add_player(self, player_name: str = None):
         res = len(self.player_names)
@@ -74,6 +75,7 @@ class Game:
                 # throw any types of composition
                 self.prev_comp = None
 
+            self.player_comps[self.current_player] = CardComp.from_card_list([])
             current_player_index = self.ongoing_players.index(self.current_player)
             self.current_player = self.ongoing_players[
                 (current_player_index + 1) % len(self.ongoing_players)
@@ -116,6 +118,7 @@ class Game:
                     self.finished = True
 
             # go to next player
+            self.player_comps[self.current_player] = comp
             self.current_player = next_player
             return True, comp
 

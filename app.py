@@ -20,7 +20,7 @@ CORS(app)
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["2000 per day", "400 per minute"],
+    default_limits=["1000000 per day", "4000 per minute"],
     storage_uri="memory://",
 )
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
@@ -45,7 +45,8 @@ cursor.execute('''
         ongoing_players BLOB NOT NULL,
         player_names BLOB NOT NULL,
         finished_players BLOB NOT NULL,
-        player_cards BLOB NOT NULL
+        player_cards BLOB NOT NULL,
+        player_comps BLOB NOT NULL
     )
 ''')
 conn.commit()
@@ -137,7 +138,8 @@ def gen_game_state(game, player):
             'turn': game.current_player,
             'deck': None if not game.started else [c.json_encode() for c in game.player_cards[player]],
             'comp': [] if game.prev_comp is None else [c.json_encode() for c in game.prev_comp.cards],
-            'started': game.started
+            'started': game.started,
+            'player_comp': [[c.json_encode() for c in comp.cards] if comp is not None else None for comp in game.player_comps]
         }
     else:
         return {
@@ -206,6 +208,7 @@ def throw_comp(token):
     update_game(game)
     if succeed:
         return jsonify({
+            "player_comp": [[c.json_encode() for c in comp.cards] if comp is not None else None for comp in game.player_comps],
             "comp": [c.json_encode() for c in explanation.cards],
             "deck": [c.json_encode() for c in game.player_cards[player_number]],
             "turn": game.current_player
@@ -221,15 +224,16 @@ def store_game(game):
     finished_players_blob = sqlite3.Binary(pickle.dumps(game.finished_players))
     prev_comp_blob = sqlite3.Binary(pickle.dumps(game.prev_comp))
     player_cards_blob = sqlite3.Binary(pickle.dumps(game.player_cards))
+    player_comps_blob = sqlite3.Binary(pickle.dumps(game.player_comps))
     try:
         # Insert the game into the table
         cursor.execute('''
-            INSERT INTO games (level, token, expiration_time, current_player, prev_comp, fold_num, winner, started, finished, ongoing_players, player_names, finished_players, player_cards)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            INSERT INTO games (level, token, expiration_time, current_player, prev_comp, fold_num, winner, started, finished, ongoing_players, player_names, finished_players, player_cards, player_comps)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         ''', (
             game.level, game.token, game.expiration_time.strftime("%Y-%m-%d %H:%M:%S"), game.current_player, prev_comp_blob,
             game.fold_num, game.winner, game.started, game.finished, ongoing_players_blob,
-            player_names_blob, finished_players_blob, player_cards_blob
+            player_names_blob, finished_players_blob, player_cards_blob, player_comps_blob
         ))
     except sqlite3.IntegrityError:
         return -1
@@ -268,6 +272,7 @@ def get_game(token):
         game.player_names = pickle.loads(row[11])
         game.finished_players = pickle.loads(row[12])
         game.player_cards = pickle.loads(row[13])
+        game.player_comps = pickle.loads(row[14])
         return game
 
 
@@ -278,11 +283,11 @@ def update_game(game):
     finished_players_blob = sqlite3.Binary(pickle.dumps(game.finished_players))
     prev_comp_blob = sqlite3.Binary(pickle.dumps(game.prev_comp))
     player_cards_blob = sqlite3.Binary(pickle.dumps(game.player_cards))
-
+    player_comps_blob = sqlite3.Binary(pickle.dumps(game.player_comps))
     cursor.execute(
-        "UPDATE games SET level = ?, token = ?, expiration_time = ?, current_player = ?, prev_comp = ?, fold_num = ?, winner = ?, started = ?, finished = ?, ongoing_players = ?, player_names = ?, finished_players = ?, player_cards = ? WHERE token = ?",
+        "UPDATE games SET level = ?, token = ?, expiration_time = ?, current_player = ?, prev_comp = ?, fold_num = ?, winner = ?, started = ?, finished = ?, ongoing_players = ?, player_names = ?, finished_players = ?, player_cards = ?, player_comps = ? WHERE token = ?",
         (game.level, game.token, game.expiration_time.strftime("%Y-%m-%d %H:%M:%S"), game.current_player, prev_comp_blob, game.fold_num,
-         game.winner, game.started, game.finished, ongoing_players_blob, player_names_blob, finished_players_blob, player_cards_blob, game.token),
+         game.winner, game.started, game.finished, ongoing_players_blob, player_names_blob, finished_players_blob, player_cards_blob, player_comps_blob, game.token),
     )
     conn.commit()
 

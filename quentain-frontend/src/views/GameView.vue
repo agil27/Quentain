@@ -10,7 +10,7 @@ import axios from 'axios'
 <template>
   <div class="container">
     <div class="canvas">
-      <canvas ref="canvas" width="1200" height="550"></canvas>
+      <canvas ref="canvas" width="2000" height="550"></canvas>
     </div>
     <div class="form">
       <n-alert v-if="showWarning" :title="alertTitle" :type="alertType">
@@ -44,16 +44,17 @@ const card_height = 315
 const draw_width = 64
 const draw_height = 96
 const draw_x_bias = 48
-const draw_y_bias = 120
+const draw_y_bias = 105
 const deck_x_offset = 320
-const deck_y_offset = 320
+const deck_y_offset = 345
 const comp_y_offset = 170
-
+const green = '#4db6ac'
+const pink = '#ff69b4'
 const turn_pos = [
-  {x: 630, y: 300},
-  {x: 1000, y: 250},
-  {x: 630, y: 140},
-  {x: 270, y: 250}
+  {x: 210, y: 450},
+  {x: 1150, y: 160},
+  {x: 500, y: 65},
+  {x: 130, y: 160}
 ]
 
 const color_map = {
@@ -63,6 +64,8 @@ const color_map = {
   'Spade': 3
 }
 
+// get location from the poker deck asset 
+// to correctly present a card
 function get_location(color, number) {
   let x, y
   if (number >= 1 && number <= 13) {
@@ -94,14 +97,27 @@ export default {
         {length: 28},
         () => ({ color: 'Cover', number: 17, selected: false})
       ),
-      comp: [],
+      comp: [[], [], [], []],
       turn: 0,
       text: "turn",
       alertTitle: 'Game not ready',
       alertType: 'warning',
       alertContent: 'Waiting for others to join...',
       started: 0,
-      game: null
+      game: null,
+      comp_pos : [
+        {x: 320, y: 230},
+        {x: 830, y: 200},
+        {x: 320, y: 110},
+        {x: 260, y: 200}
+      ],
+      pass_pos: [
+        {x: 630, y: 320},
+        {x: 1000, y: 250},
+        {x: 630, y: 150},
+        {x: 270, y: 250}
+      ],
+      playerStarted: [false, false, false, false]
     }
   },
   methods: {
@@ -121,9 +137,6 @@ export default {
           deck_offsetY += 20
         }
 
-        let comp_offsetX = deck_x_offset + (14 - this.comp.length) / 2 * draw_x_bias
-        let comp_offsetY = comp_y_offset
-
         // draw deck for user
         this.deck.forEach((region, index) => {
           // Draw the image
@@ -135,18 +148,42 @@ export default {
         draw_cover(80, 200)
         draw_cover(1100, 200)
 
-        // draw the thrown comp in the middle
-        this.comp.forEach((region, index) => {
-          draw_card(region, index, comp_offsetX, comp_offsetY)
-        })
+        // draw the thrown comps
+        for (let i = 0; i < 4; i++) {
+          let j = this.get_visual_idx(i)
+          if (this.comp[i] === null) {
+            continue
+          }
+          console.log(i, this.player_id, j)
+          let comp_offsetX = this.comp_pos[j].x
+          if (j === 2 || j === 0) {
+            comp_offsetX += (14 - this.comp[i].length) / 2 * draw_x_bias
+          }
+          if (j === 1) {
+            comp_offsetX += (5 - this.comp[i].length) * draw_x_bias
+          }
+          let comp_offsetY = this.comp_pos[j].y
+          this.comp[i].forEach((region, index) => {
+            draw_card(region, index, comp_offsetX, comp_offsetY)
+          })
+
+          // if no comp is thrown, draw a pass sign
+          if (this.comp[i].length === 0) {
+            ctx.fillStyle = green
+
+            // draw the rectangle
+            ctx.fillRect(this.pass_pos[j].x - 4, this.pass_pos[j].y - 22, 65, 28)
+
+            // draw the pass text
+            ctx.fillStyle = "#f8f8f8"
+            ctx.font = "bold 24px v-mono"
+            ctx.fillText('pass', this.pass_pos[j].x, this.pass_pos[j].y)
+          }
+        }
 
         // draw turn sign
         let visual_idx = (this.turn + 4 - this.player_id) % 4
-        if (this.text === "pass") {
-          ctx.fillStyle = '#4db6ac'
-        } else {
-          ctx.fillStyle = '#ff69b4'
-        }
+        ctx.fillStyle = pink
 
         // draw the rectangle
         ctx.fillRect(turn_pos[visual_idx].x - 4, turn_pos[visual_idx].y - 22, 65, 28)
@@ -158,7 +195,7 @@ export default {
         ctx.shadowOffsetX = 0
         ctx.shadowOffsetY = 0
         ctx.font = "bold 24px v-mono"
-        ctx.fillText(this.text, turn_pos[visual_idx].x, turn_pos[visual_idx].y)
+        ctx.fillText('turn', turn_pos[visual_idx].x, turn_pos[visual_idx].y)
       }
 
       function draw_cover(x, y) {
@@ -246,16 +283,16 @@ export default {
         }).then(response => {
           let game = response.data
           this.deck = game.deck
-          this.comp = game.comp
-          if (this.comp.length === 0) {
-            this.text = 'pass'
-          }
+          this.comp = game.player_comp
           this.turn = game.turn
           this.redraw_canvas()
         }).catch(error => {
           alert(error)
         })
       }
+    },
+    get_visual_idx(idx) {
+      return (idx + 4 - this.player_id) % 4
     }
   },
   computed: {
@@ -263,7 +300,7 @@ export default {
       return this.started ? "38%" : "45%"
     },
     showWarning() {
-      return !this.started || this.turn !== this.player_id
+      return (!this.started || this.turn !== this.player_id)
     }
   },
   watch: {
@@ -281,14 +318,13 @@ export default {
               let game = response.data
               if (game.started !== this.started) {
                 this.deck = game.deck
-                this.comp = game.comp
+                this.comp = game.player_comp
                 this.turn = game.turn
                 this.started = game.started
                 this.redraw_canvas()
-              } else if (game.turn != this.turn) {
-                this.comp = game.comp
+              } else if (game.turn !== this.turn) {
+                this.comp = game.player_comp
                 this.turn = game.turn
-                console.log('redraw')
                 this.redraw_canvas()
               }
             }).catch(error => {
@@ -319,7 +355,7 @@ export default {
   .form {
     display: flex;
     margin-top: 0;
-    margin-left: 45%;
+    margin-left: 27%;
     margin-bottom: 3%;
     align-items: center;
   }
