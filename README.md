@@ -4,7 +4,7 @@ An implementation of the Poker Game Guandan popular among Jiangsu and Anhui in C
 ## Dependency
 
 - `Node.js`: `vue`, `naive-ui`, `axios`
-- `Python`: `flask`, `flask-cors`, `flask-limiter`, `flask-cache`
+- `Python`: `flask`, `flask-cors`, `flask-limiter`, `flask-caching`, `sqlalchemy`
 
 ## Rule
 According to https://en.wikipedia.org/wiki/Guandan
@@ -49,7 +49,8 @@ The current demo looks like this. The implementation is based on `HTML5 canvas`.
 * To start game engine locally:
 
 ```bash
-cd quentian
+cd quentian-service
+
 flask run --port=5000
 
 # or
