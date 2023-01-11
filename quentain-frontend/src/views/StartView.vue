@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useNotification, useMessage, NButton, NCard, NIcon, NAlert, NSpace, NInput, NInputNumber} from 'naive-ui'
+import { useNotification, useMessage, NButton, NCard, NIcon, NAlert, NSpace, NInput, NInputNumber, NSwitch} from 'naive-ui'
 import { GameControllerOutline, GameController } from '@vicons/ionicons5'
 import { TokenFilled } from '@vicons/material'
 import axios from 'axios'
@@ -23,7 +23,8 @@ export default {
       level: 2,
       token: '',
       player_id: -1,
-      failError: ''
+      failError: '',
+      experimental: false
     }
   },
   methods: {
@@ -33,7 +34,8 @@ export default {
     async generate_token() {
       try {
         const response = await axios.post('http://localhost:5050/new_game', {
-          level: parseInt(this.level)
+          level: parseInt(this.level),
+          experimental: this.experimental
         })
         this.joinGame = true;
         this.token = response.data.token
@@ -45,10 +47,11 @@ export default {
     },
     async join_game() {
       try {
-        const response = await axios.post('http://localhost:5050/join_game/' + this.token, {})
+        const response = await axios.post('http://localhost:5050/join_game/' + this.token, {
+        })
         this.player_id = response.data.player_number
         console.log(this.player_id)
-        this.$emit('joinGame', this.player_id, this.token)
+        this.$emit('joinGame', this.player_id, this.token, this.experimental)
         this.failError = ''
       } catch (error) {
         console.log(error)
@@ -102,6 +105,10 @@ export default {
           <n-icon :component="TokenFilled" />
         </template>
       </n-input-number>
+      <n-space v-if='!joinGame'>
+        Experimental Mode (4 cards)
+        <n-switch v-model:value="experimental" />
+      </n-space>
       <n-alert v-if="failJoin" title="Error" type="error">
         Fail to join game: {{ this.failError }}
       </n-alert>
