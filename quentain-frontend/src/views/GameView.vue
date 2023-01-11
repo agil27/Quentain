@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import 'vfonts/FiraSans.css'
 import 'vfonts/FiraCode.css'
 import { NButton, NSpace, NIcon, NAlert, NCard, NModal} from 'naive-ui'
@@ -71,7 +71,7 @@ import axios from 'axios'
   </div>
 </template>
 
-<script>
+<script lang="ts">
 const card_width = 202.5
 const card_height = 315
 const draw_width = 64
