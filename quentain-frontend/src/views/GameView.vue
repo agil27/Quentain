@@ -48,6 +48,7 @@ import axios from 'axios'
       </n-card>
     </n-modal>
     <div class="form">
+      <n-space vertical>
       <n-alert v-if="showWarning" :title="alertTitle" :type="alertType">
         {{ this.alertContent }}..
       </n-alert>
@@ -60,6 +61,10 @@ import axios from 'axios'
             </n-icon>
           </template>
           {{ this.selectSomething ? 'Throw' : 'Pass'}}
+        </n-button>
+      </n-space>
+      <n-button strong type="warning" @click="end_game">
+            Quit (Return with token {{ this.token }})
         </n-button>
       </n-space>
     </div>
@@ -133,6 +138,7 @@ export default {
       alertContent: 'Waiting for others to join...',
       started: 0,
       finished: false,
+      paused: 0,
       game: null,
       comp_pos : [
         {x: 320, y: 230},
@@ -341,6 +347,16 @@ export default {
         })
       }
     },
+    async end_game() {
+      try {
+        const response = await axios.post('http://localhost:5050/end_game/' + this.token,
+                        {token:this.token});               
+        this.endGame = true;
+        this.$emit('endGame');
+      } catch (error) {
+        console.error(error);
+      }
+    },
     get_visual_idx(idx) {
       return (idx + 4 - this.player_id) % 4
     },
@@ -387,7 +403,7 @@ export default {
   watch: {
     turn: {
       handler() {
-        if (!this.finished && (this.turn !== this.player_id || !this.started)) {
+        if (!this.finished && this.started && this.turn !== this.player_id && this.paused === 0) {
           if (this.started) {
             this.alertTitle = 'Unable to throw'
             this.alertContent = 'It\'s not your turn yet'

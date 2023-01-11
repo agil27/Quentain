@@ -18,8 +18,8 @@ import 'vfonts/FiraCode.css'
       </li>
     </ul>
   </nav>
-  <start-view v-if="!inGame" @joinGame="join_game" />
-  <game-view v-else :player_id="player_id" :token="token" @returnIndex="return_index"/>
+  <start-view ref="startView" v-if="!inGame" @joinGame="join_game"/>
+  <game-view ref="gameView" v-else :player_id="player_id" :token="token" @endGame="end_game"/>
 </div>
 </template>
 
@@ -47,6 +47,11 @@ export default {
       this.inGame = true
     },
     return_index() {
+      this.inGame = false
+      this.token = ''
+      this.player_id = -1
+    },
+    end_game() {
       this.inGame = false
       this.token = ''
       this.player_id = -1
