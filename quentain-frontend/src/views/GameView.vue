@@ -11,7 +11,7 @@ import axios from 'axios'
 <template>
   <div class="container">
     <div class="canvas">
-      <canvas ref="canvas" width="2000" height="550"></canvas>
+      <canvas ref="canvas" width="2000" height="550" @click="onCanvasClick"></canvas>
     </div>
     <n-modal
       v-model:show="this.throwError"
@@ -165,6 +165,19 @@ export default {
       this.reset()
       this.$emit('returnIndex')
     },
+    onCanvasClick(event) {
+      const canvas = this.$refs.canvas
+      const rect = canvas.getBoundingClientRect()
+      const x = event.clientX - rect.left
+      const y = event.clientY - rect.top
+      // Check if the mouse is clicked on a certain card
+      this.deck.forEach((region, index) => {
+        if (x >= region.draw_x && x <= region.draw_x + draw_x_bias && y >= region.draw_y && y <= region.draw_y + draw_height) {
+          region.selected = ! region.selected
+          this.redraw_canvas()
+        }
+      })
+    },
     redraw_canvas() {
       const canvas = this.$refs.canvas
       const ctx = canvas.getContext('2d')
@@ -305,22 +318,22 @@ export default {
       }
 
       // add click events
-      function onClick(event, region, index) {
-        const rect = canvas.getBoundingClientRect()
-        const x = event.clientX - rect.left
-        const y = event.clientY - rect.top
-        // Check if the mouse is over the image
-        if (x >= region.draw_x && x <= region.draw_x + draw_x_bias && y >= region.draw_y && y <= region.draw_y + draw_height) {
-          region.selected = ! region.selected
-          draw_deck()
-        }
-      }
-      const boundOnClick = onClick.bind(this)
-      if (this.turn === this.player_id) {
-        this.deck.forEach((region, index) => {
-          canvas.addEventListener('click', event => boundOnClick(event, region, index))
-      })
-      }
+      // function onClick(event, region, index) {
+      //   const rect = canvas.getBoundingClientRect()
+      //   const x = event.clientX - rect.left
+      //   const y = event.clientY - rect.top
+      //   // Check if the mouse is over the image
+      //   if (x >= region.draw_x && x <= region.draw_x + draw_x_bias && y >= region.draw_y && y <= region.draw_y + draw_height) {
+      //     region.selected = ! region.selected
+      //     draw_deck()
+      //   }
+      // }
+      // const boundOnClick = onClick.bind(this)
+      // if (this.turn === this.player_id) {
+      //   this.deck.forEach((region, index) => {
+      //       canvas.addEventListener('click', event => boundOnClick(event, region, index))
+      //   })
+      // }
     },
     throw_cards(event) {
       if (this.turn === this.player_id) {
@@ -470,7 +483,6 @@ export default {
           game.finished_players.forEach(id => {
             this.playerFinished[id] = true
           })
-          console.log(this.playerFinished)
           this.redraw_canvas()
         }
       }).catch(error => {
