@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_caching import Cache
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
@@ -39,6 +40,7 @@ def check_game_room_expiration(cursor):
     for row in rows:
         id = row[0]
         cursor.execute("DELETE FROM game WHERE id = ?", (id,))
+
 
 if __name__ == "__main__":
     from models import Game

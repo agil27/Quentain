@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
-from flask_caching import Cache
 
 import random
 import string
@@ -11,13 +10,10 @@ import quentain
 
 api = Blueprint('api', __name__)
 
-
 def generate_token():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 from models import *
-
-# cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 @api.route('/new_game', methods=['POST'])
 @cross_origin()
@@ -39,7 +35,6 @@ def new_game():
 
 def add_player_to_game(game, player_name=''):
     number = game.add_player(player_name)
-    # cache.delete_memoized(get_player_game_state, game.token)
     update_game_player(game)
     return number
 
@@ -64,7 +59,6 @@ def join_game(token):
 
 @api.route('/get_game_state/<token>', methods=['GET'])
 @cross_origin()
-# @cache.memoize(20)  # cache for 20 seconds
 def get_game_state(token):
     # Get the player's game from the database or cache
     game = get_game(token)
@@ -95,7 +89,6 @@ def gen_game_state(game, player):
 # Sherry: change this to get_player_game_state to make the name more explanable
 @api.route('/get_player_game_state/<token>/<player_id>', methods=['GET'])
 @cross_origin()
-# @cache.memoize(20)  # cache for 20 seconds
 def get_player_game_state(token, player_id):
     # Get the player's game from the database or cache
     game = get_game(token)
@@ -105,7 +98,6 @@ def get_player_game_state(token, player_id):
 @api.route('/throw_cards/<token>', methods=['POST'])
 @cross_origin()
 def throw_cards(token):
-    # cache.delete_memoized(get_player_game_state, token)
     data = request.get_json()
     player_number = data.get('player_number')
     choices = data.get('choices')
@@ -135,7 +127,6 @@ def throw_cards(token):
 @api.route('/throw_comp/<token>', methods=['POST'])
 @cross_origin()
 def throw_comp(token):
-    # cache.delete_memoized(get_player_game_state, token)
     data = request.get_json()
     player_number = data.get('player_number')
     choices = data.get('choices')
