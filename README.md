@@ -1,11 +1,33 @@
 # Quentain
 An implementation of the Poker Game Guandan popular among Jiangsu and Anhui in China
 
+
+## Demo
+
+A live demo is on at https://quentain.onrender.com. When prompted to enter the server address, use https://quentain-server.onrender.com.
+
 ## Dependency
 
 Under `quentain-frontend`, run `npm install`
 
 Under `quentain-server`, run `pip install -r requirements.txt`
+
+## Deployment
+
+For the deploy of the frontend, enter `quentain-frontend`, run
+
+```
+> npm install -g serve
+> npm run build
+```
+
+The build result would be under `dist` directory. If you wish to run it locally, run `serve -s dist`.
+
+For the deployment of the backend, use GUnicorn as the WSGI
+
+```
+> gunicorn app:app
+```
 
 ## Rule
 According to https://en.wikipedia.org/wiki/Guandan
