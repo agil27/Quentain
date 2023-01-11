@@ -10,11 +10,12 @@ import datetime
 class Game:
     '''
     A single game with a certain level value
+
+    If modify Game, then modify Game in ../quentain-service/models.py
     '''
 
     def __init__(self, level, first_player=0, experimental=False, token=''):
         self.token = token
-        self.expiration_time = datetime.datetime.now() + datetime.timedelta(minutes=5)
         self.level = level
         self.distribute_cards(experimental)
         self.current_player = first_player

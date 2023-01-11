@@ -72,8 +72,14 @@ The current demo looks like this. The implementation is based on `HTML5 canvas`.
 * To start game engine locally:
 
 ```bash
+<<<<<<< HEAD
+cd quentian-service
+
+flask run --port=5000
+=======
 cd quentian-server
 flask run --port=5050
+>>>>>>> main
 
 # or
 python app.py
