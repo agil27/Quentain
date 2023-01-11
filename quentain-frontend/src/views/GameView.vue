@@ -6,6 +6,7 @@ import { FistRaised } from '@vicons/fa'
 import { PlayCard } from '@vicons/tabler'
 import { Trophy16Filled } from '@vicons/fluent'
 import axios from 'axios'
+import config from '../../config'
 </script>
 
 <template>
@@ -125,7 +126,7 @@ export default {
     },
     server: {
       type: String,
-      default: 'http://localhost:5050'
+      default: config.serverPath
     }
   },
   data() {

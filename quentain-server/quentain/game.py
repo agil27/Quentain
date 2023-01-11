@@ -16,6 +16,7 @@ class Game:
 
     def __init__(self, level, first_player=0, experimental=False, token=''):
         self.token = token
+        self.expiration_time = datetime.datetime.now() + datetime.timedelta(minutes=5)
         self.level = level
         self.distribute_cards(experimental)
         self.current_player = first_player
