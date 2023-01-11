@@ -108,7 +108,7 @@ function get_location(color, number) {
 }
 
 export default {
-  name: 'MyCanvas',
+  name: 'game-view',
   props: {
     token: {
       type: String,
@@ -150,11 +150,13 @@ export default {
       playerFinished: [false, false, false, false],
       rank: -1,
       throwError: false,
-      throwErrorContent: ''
+      throwErrorContent: '',
+      intervalId : null 
     }
   },
   methods: {
     returnToIndex() {
+      this.reset()
       this.$emit('returnIndex')
     },
     redraw_canvas() {
@@ -310,7 +312,7 @@ export default {
       const boundOnClick = onClick.bind(this)
       if (this.turn === this.player_id) {
         this.deck.forEach((region, index) => {
-        canvas.addEventListener('click', event => boundOnClick(event, region, index))
+          canvas.addEventListener('click', event => boundOnClick(event, region, index))
       })
       }
     },
@@ -341,6 +343,28 @@ export default {
     },
     get_visual_idx(idx) {
       return (idx + 4 - this.player_id) % 4
+    },
+    reset() {
+      clearInterval(this.intervalId)
+      this.deck = Array.from(
+        {length: 28},
+        () => ({ color: 'Cover', number: 17, selected: false})
+      ),
+      this.comp = [[], [], [], []],
+      this.turn = 0,
+      this.text = "turn",
+      this.alertTitle =  'Game not ready',
+      this.alertType = 'warning',
+      this.alertContent = 'Waiting for others to join...',
+      this.started = 0,
+      this.finished = false,
+      this.game = null,
+      this.playerStarted = [false, false, false, false],
+      this.playerFinished = [false, false, false, false],
+      this.rank = -1,
+      this.throwError = false,
+      this.throwErrorContent = ''
+      this.intervalId = null
     }
   },
   computed: {
@@ -368,37 +392,37 @@ export default {
             this.alertTitle = 'Unable to throw'
             this.alertContent = 'It\'s not your turn yet'
           }
-          setInterval(() => {
-            axios.get(
-              'http://localhost:5050/get_player_game_state/' + this.token + '/' + this.player_id
-            ).then(response => {
-              let game = response.data
-              this.finished = game.finished
-              if (game.finished) {
-                this.rank = game.rank[this.player_id]
-              }
-              if (game.started !== this.started) {
-                this.deck = game.deck
-                this.comp = game.player_comp
-                this.turn = game.turn
-                this.started = game.started
-                game.finished_players.forEach(id => {
-                  this.playerFinished[id] = true
-                })
-                this.redraw_canvas()
-              } else if (game.turn !== this.turn) {
-                this.comp = game.player_comp
-                this.turn = game.turn
-                game.finished_players.forEach(id => {
-                  this.playerFinished[id] = true
-                })
-                console.log(this.playerFinished)
-                this.redraw_canvas()
-              }
-            }).catch(error => {
-              // console.log(error)
-            })
-          }, 4000)
+          // setInterval(() => {
+          //   axios.get(
+          //     'http://localhost:5050/get_player_game_state/' + this.token + '/' + this.player_id
+          //   ).then(response => {
+          //     let game = response.data
+          //     this.finished = game.finished
+          //     if (game.finished) {
+          //       this.rank = game.rank[this.player_id]
+          //     }
+          //     if (game.started !== this.started) {
+          //       this.deck = game.deck
+          //       this.comp = game.player_comp
+          //       this.turn = game.turn
+          //       this.started = game.started
+          //       game.finished_players.forEach(id => {
+          //         this.playerFinished[id] = true
+          //       })
+          //       this.redraw_canvas()
+          //     } else if (game.turn !== this.turn) {
+          //       this.comp = game.player_comp
+          //       this.turn = game.turn
+          //       game.finished_players.forEach(id => {
+          //         this.playerFinished[id] = true
+          //       })
+          //       console.log(this.playerFinished)
+          //       this.redraw_canvas()
+          //     }
+          //   }).catch(error => {
+          //     // console.log(error)
+          //   })
+          // }, 4000)
         }
       },
       immediate: true,
@@ -406,6 +430,37 @@ export default {
   },
   mounted() {
     this.redraw_canvas()
+    this.intervalId = setInterval(() => {
+      axios.get(
+        'http://localhost:5050/get_player_game_state/' + this.token + '/' + this.player_id
+      ).then(response => {
+        let game = response.data
+        this.finished = game.finished
+        if (game.finished) {
+          this.rank = game.rank[this.player_id]
+        }
+        if (game.started !== this.started) {
+          this.deck = game.deck
+          this.comp = game.player_comp
+          this.turn = game.turn
+          this.started = game.started
+          game.finished_players.forEach(id => {
+            this.playerFinished[id] = true
+          })
+          this.redraw_canvas()
+        } else if (game.turn !== this.turn) {
+          this.comp = game.player_comp
+          this.turn = game.turn
+          game.finished_players.forEach(id => {
+            this.playerFinished[id] = true
+          })
+          console.log(this.playerFinished)
+          this.redraw_canvas()
+        }
+      }).catch(error => {
+        // console.log(error)
+      })
+    }, 4000)
   }
 }
 </script>

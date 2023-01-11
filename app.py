@@ -68,7 +68,7 @@ def new_game():
         # Extract the level from the data
         level = data.get("level")
         # Initialize the game with the player's name
-        game = Game(level=level, token=token, experimental=False)
+        game = Game(level=level, token=token, experimental=True)
         # Store the game in a database
         status = store_game(game)
 
