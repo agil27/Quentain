@@ -12,7 +12,8 @@
   "dependencies": {
     "axios": "^1.2.2",
     "vue": "^3.2.45",
-    "vue-router": "^4.1.6"
+    "vue-router": "^4.1.6",
+    "yarn": "^1.22.19"
   },
   "devDependencies": {
     "@types/node": "^18.11.12",

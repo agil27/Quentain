@@ -1,5 +1,5 @@
 Flask
 GUnicorn
 flask-cors
-flask-limiter
-flask-cache
+Flask-Limiter
+Flask-Caching
