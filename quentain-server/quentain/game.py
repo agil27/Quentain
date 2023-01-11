@@ -23,6 +23,7 @@ class Game:
         self.fold_num = 0
         self.winner = None
         self.started = False
+        self.paused = False
         self.finished = False
         self.ongoing_players = [0, 1, 2, 3]
         self.player_names = {}

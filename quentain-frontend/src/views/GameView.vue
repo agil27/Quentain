@@ -11,19 +11,20 @@ import axios from 'axios'
 <template>
   <div class="container">
     <div class="canvas">
-      <canvas ref="canvas" width="2000" height="550"></canvas>
+      <img ref="pokerImg" :style="{display: 'none'}" src='@/assets/deck.svg' />
+      <canvas ref="canvas" width="2000" height="550" @click="onCanvasClick"></canvas>
     </div>
     <n-modal
-      v-model:show="this.throwError"
+      v-model:show="throwError"
       :mask-closable="false"
       preset="dialog"
       title="Unable to throw"
-      :content="this.throwErrorContent"
+      :content="throwErrorContent"
       positive-text="Got it"
-      @positive-click="this.throwError = false"
+      @positive-click="throwError = false"
     />
     <n-modal
-      v-model:show="this.finished"
+      v-model:show="finished"
       :mask-closable="false"
     >
       <n-card
@@ -38,7 +39,7 @@ import axios from 'axios'
           <n-icon size="25" color="#0e7a0d">
             <Trophy16Filled />
           </n-icon>
-          Your rank: {{ this.rank }}
+          Your rank: {{ rank }}
         </n-space>
         <template #footer>
           <n-button type="primary" @click="returnToIndex">
@@ -48,8 +49,9 @@ import axios from 'axios'
       </n-card>
     </n-modal>
     <div class="form">
+      <n-space vertical>
       <n-alert v-if="showWarning" :title="alertTitle" :type="alertType">
-        {{ this.alertContent }}..
+        {{ alertContent }}..
       </n-alert>
       <n-space v-else align="center">
         <n-button strong secondary type="success" size="large" @click="throw_cards">
@@ -59,7 +61,11 @@ import axios from 'axios'
               <fist-raised v-else/>
             </n-icon>
           </template>
-          {{ this.selectSomething ? 'Throw' : 'Pass'}}
+          {{ selectSomething ? 'Throw' : 'Pass'}}
+        </n-button>
+      </n-space>
+      <n-button strong type="warning" @click="end_game">
+            Quit (Return with token {{ token }})
         </n-button>
       </n-space>
     </div>
@@ -108,7 +114,6 @@ function get_location(color, number) {
 }
 
 export default {
-  name: 'MyCanvas',
   props: {
     token: {
       type: String,
@@ -117,6 +122,10 @@ export default {
     player_id: {
       type: Number,
       required: true
+    },
+    server: {
+      type: String,
+      default: 'http://localhost:5050'
     }
   },
   data() {
@@ -133,6 +142,7 @@ export default {
       alertContent: 'Waiting for others to join...',
       started: 0,
       finished: false,
+      paused: 0,
       game: null,
       comp_pos : [
         {x: 320, y: 230},
@@ -150,18 +160,33 @@ export default {
       playerFinished: [false, false, false, false],
       rank: -1,
       throwError: false,
-      throwErrorContent: ''
+      throwErrorContent: '',
+      intervalId : null,
+      firstLoad: true
     }
   },
   methods: {
     returnToIndex() {
+      this.reset()
       this.$emit('returnIndex')
+    },
+    onCanvasClick(event) {
+      const canvas = this.$refs.canvas
+      const rect = canvas.getBoundingClientRect()
+      const x = event.clientX - rect.left
+      const y = event.clientY - rect.top
+      // Check if the mouse is clicked on a certain card
+      this.deck.forEach((region, index) => {
+        if (x >= region.draw_x && x <= region.draw_x + draw_x_bias && y >= region.draw_y && y <= region.draw_y + draw_height) {
+          region.selected = ! region.selected
+          this.redraw_canvas()
+        }
+      })
     },
     redraw_canvas() {
       const canvas = this.$refs.canvas
       const ctx = canvas.getContext('2d')
-      const image = new Image()
-      image.src = 'src/assets/deck.svg'
+      const image = this.$refs.pokerImg
 
       function draw_deck() {
         // Clear the canvas
@@ -292,27 +317,33 @@ export default {
       }
 
       draw_deck = draw_deck.bind(this)
-      image.onload = () => {
+      console.log('draw_deck')
+      if (this.firstLoad) {
+        image.onload = () => {
+          draw_deck()
+          this.firstLoad = false
+        }
+      } else {
         draw_deck()
       }
 
       // add click events
-      function onClick(event, region, index) {
-        const rect = canvas.getBoundingClientRect()
-        const x = event.clientX - rect.left
-        const y = event.clientY - rect.top
-        // Check if the mouse is over the image
-        if (x >= region.draw_x && x <= region.draw_x + draw_x_bias && y >= region.draw_y && y <= region.draw_y + draw_height) {
-          region.selected = ! region.selected
-          draw_deck()
-        }
-      }
-      const boundOnClick = onClick.bind(this)
-      if (this.turn === this.player_id) {
-        this.deck.forEach((region, index) => {
-        canvas.addEventListener('click', event => boundOnClick(event, region, index))
-      })
-      }
+      // function onClick(event, region, index) {
+      //   const rect = canvas.getBoundingClientRect()
+      //   const x = event.clientX - rect.left
+      //   const y = event.clientY - rect.top
+      //   // Check if the mouse is over the image
+      //   if (x >= region.draw_x && x <= region.draw_x + draw_x_bias && y >= region.draw_y && y <= region.draw_y + draw_height) {
+      //     region.selected = ! region.selected
+      //     draw_deck()
+      //   }
+      // }
+      // const boundOnClick = onClick.bind(this)
+      // if (this.turn === this.player_id) {
+      //   this.deck.forEach((region, index) => {
+      //       canvas.addEventListener('click', event => boundOnClick(event, region, index))
+      //   })
+      // }
     },
     throw_cards(event) {
       if (this.turn === this.player_id) {
@@ -324,7 +355,7 @@ export default {
             }
           })
         }
-        axios.post('http://localhost:5050/throw_comp/' + this.token, {
+        axios.post(this.server + '/throw_comp/' + this.token, {
           player_number: this.player_id,
           choices: choices
         }).then(response => {
@@ -339,8 +370,40 @@ export default {
         })
       }
     },
+    async end_game() {
+      try {
+        const response = await axios.post(this.server + '/end_game/' + this.token,
+                        {token:this.token});               
+        this.endGame = true;
+        this.$emit('endGame');
+      } catch (error) {
+        console.error(error);
+      }
+    },
     get_visual_idx(idx) {
       return (idx + 4 - this.player_id) % 4
+    },
+    reset() {
+      clearInterval(this.intervalId)
+      this.deck = Array.from(
+        {length: 28},
+        () => ({ color: 'Cover', number: 17, selected: false})
+      ),
+      this.comp = [[], [], [], []],
+      this.turn = 0,
+      this.text = "turn",
+      this.alertTitle =  'Game not ready',
+      this.alertType = 'warning',
+      this.alertContent = 'Waiting for others to join...',
+      this.started = 0,
+      this.finished = false,
+      this.game = null,
+      this.playerStarted = [false, false, false, false],
+      this.playerFinished = [false, false, false, false],
+      this.rank = -1,
+      this.throwError = false,
+      this.throwErrorContent = ''
+      this.intervalId = null
     }
   },
   computed: {
@@ -363,42 +426,42 @@ export default {
   watch: {
     turn: {
       handler() {
-        if (!this.finished && (this.turn !== this.player_id || !this.started)) {
+        if (!this.finished && this.started && this.turn !== this.player_id && this.paused === 0) {
           if (this.started) {
             this.alertTitle = 'Unable to throw'
             this.alertContent = 'It\'s not your turn yet'
           }
-          setInterval(() => {
-            axios.get(
-              'http://localhost:5050/get_player_game_state/' + this.token + '/' + this.player_id
-            ).then(response => {
-              let game = response.data
-              this.finished = game.finished
-              if (game.finished) {
-                this.rank = game.rank[this.player_id]
-              }
-              if (game.started !== this.started) {
-                this.deck = game.deck
-                this.comp = game.player_comp
-                this.turn = game.turn
-                this.started = game.started
-                game.finished_players.forEach(id => {
-                  this.playerFinished[id] = true
-                })
-                this.redraw_canvas()
-              } else if (game.turn !== this.turn) {
-                this.comp = game.player_comp
-                this.turn = game.turn
-                game.finished_players.forEach(id => {
-                  this.playerFinished[id] = true
-                })
-                console.log(this.playerFinished)
-                this.redraw_canvas()
-              }
-            }).catch(error => {
-              // console.log(error)
-            })
-          }, 4000)
+          // setInterval(() => {
+          //   axios.get(
+          //     'http://localhost:5050/get_player_game_state/' + this.token + '/' + this.player_id
+          //   ).then(response => {
+          //     let game = response.data
+          //     this.finished = game.finished
+          //     if (game.finished) {
+          //       this.rank = game.rank[this.player_id]
+          //     }
+          //     if (game.started !== this.started) {
+          //       this.deck = game.deck
+          //       this.comp = game.player_comp
+          //       this.turn = game.turn
+          //       this.started = game.started
+          //       game.finished_players.forEach(id => {
+          //         this.playerFinished[id] = true
+          //       })
+          //       this.redraw_canvas()
+          //     } else if (game.turn !== this.turn) {
+          //       this.comp = game.player_comp
+          //       this.turn = game.turn
+          //       game.finished_players.forEach(id => {
+          //         this.playerFinished[id] = true
+          //       })
+          //       console.log(this.playerFinished)
+          //       this.redraw_canvas()
+          //     }
+          //   }).catch(error => {
+          //     // console.log(error)
+          //   })
+          // }, 4000)
         }
       },
       immediate: true,
@@ -406,6 +469,39 @@ export default {
   },
   mounted() {
     this.redraw_canvas()
+    this.intervalId = setInterval(() => {
+      axios.get(
+        this.server + '/get_player_game_state/' + this.token + '/' + this.player_id
+      ).then(response => {
+        let game = response.data
+        this.finished = game.finished
+        if (game.finished) {
+          this.rank = game.rank[this.player_id]
+        }
+        if (game.started !== this.started) {
+          this.alertTitle = 'Unable to throw'
+          this.alertContent = 'It\'s not your turn yet'
+          this.deck = game.deck
+          console.log(this.deck)
+          this.comp = game.player_comp
+          this.turn = game.turn
+          this.started = game.started
+          game.finished_players.forEach(id => {
+            this.playerFinished[id] = true
+          })
+          this.redraw_canvas()
+        } else if (game.turn !== this.turn) {
+          this.comp = game.player_comp
+          this.turn = game.turn
+          game.finished_players.forEach(id => {
+            this.playerFinished[id] = true
+          })
+          this.redraw_canvas()
+        }
+      }).catch(error => {
+        // console.log(error)
+      })
+    }, 4000)
   }
 }
 </script>

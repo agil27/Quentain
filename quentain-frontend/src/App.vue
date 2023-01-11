@@ -1,5 +1,6 @@
-<script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+<script setup>
+import StartView from './views/StartView.vue'
+import GameView from './views/GameView.vue'
 import 'vfonts/FiraSans.css'
 import 'vfonts/FiraCode.css'
 </script>
@@ -18,35 +19,37 @@ import 'vfonts/FiraCode.css'
       </li>
     </ul>
   </nav>
-  <start-view v-if="!inGame" @joinGame="join_game" />
-  <game-view v-else :player_id="player_id" :token="token" @returnIndex="return_index"/>
+  <StartView v-if="!inGame" @joinGame="join_game"/>
+  <GameView v-else :player_id="player_id" :token="token" :server="gameServer" @endGame="end_game" @returnIndex="return_index"/>
 </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-import StartView from '@/views/StartView.vue'
-import GameView from '@/views/GameView.vue'
-
+<script>
 export default {
   components: {
-    StartView,
-    GameView
+    StartView, GameView
   },
   data() {
     return {
       inGame: false,
       player_id: -1,
-      token: ''
+      token: '',
+      gameServer: 'http://localhost:5050'
     }
   },
   methods: {
-    join_game(player_id, token) {
+    join_game(player_id, token, returnServer) {
       this.player_id = player_id
       this.token = token
       this.inGame = true
+      this.gameServer = returnServer
     },
     return_index() {
+      this.inGame = false
+      this.token = ''
+      this.player_id = -1
+    },
+    end_game() {
       this.inGame = false
       this.token = ''
       this.player_id = -1

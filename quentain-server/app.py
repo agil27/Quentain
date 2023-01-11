@@ -41,6 +41,7 @@ cursor.execute('''
         fold_num INTEGER NOT NULL,
         winner INTEGER,
         started INTEGER NOT NULL,
+        paused INTEGER NOT NULL,
         finished INTEGER NOT NULL,
         ongoing_players BLOB NOT NULL,
         player_names BLOB NOT NULL,
@@ -67,8 +68,9 @@ def new_game():
         data = request.get_json()
         # Extract the level from the data
         level = data.get("level")
+        experimental = data.get("experimental")
         # Initialize the game with the player's name
-        game = Game(level=level, token=token, experimental=False)
+        game = Game(level=level, token=token, experimental=experimental)
         # Store the game in a database
         status = store_game(game)
 
@@ -133,7 +135,7 @@ def get_game_state(token):
 
 
 def gen_game_state(game, player):
-    if not game.finished:
+    if not game.finished and not game.paused:
         return {
             'turn': game.current_player,
             'deck': None if not game.started else [c.json_encode() for c in game.player_cards[player]],
@@ -141,7 +143,14 @@ def gen_game_state(game, player):
             'started': game.started,
             'player_comp': [[c.json_encode() for c in comp.cards] if comp is not None else None for comp in game.player_comps],
             'finished_players': game.finished_players,
-            'finished': game.finished
+            'finished': game.finished,
+            'paused': game.paused
+        }
+    elif game.paused:
+        return {
+            'started': game.started,
+            "paused": game.paused,
+            'player_comp': [[c.json_encode() for c in comp.cards] if comp is not None else None for comp in game.player_comps],
         }
     else:
         return {
@@ -230,11 +239,11 @@ def store_game(game):
     try:
         # Insert the game into the table
         cursor.execute('''
-            INSERT INTO games (level, token, expiration_time, current_player, prev_comp, fold_num, winner, started, finished, ongoing_players, player_names, finished_players, player_cards, player_comps)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            INSERT INTO games (level, token, expiration_time, current_player, prev_comp, fold_num, winner, started, paused, finished, ongoing_players, player_names, finished_players, player_cards, player_comps)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         ''', (
             game.level, game.token, game.expiration_time.strftime("%Y-%m-%d %H:%M:%S"), game.current_player, prev_comp_blob,
-            game.fold_num, game.winner, game.started, game.finished, ongoing_players_blob,
+            game.fold_num, game.winner, game.started, game.paused, game.finished, ongoing_players_blob,
             player_names_blob, finished_players_blob, player_cards_blob, player_comps_blob
         ))
     except sqlite3.IntegrityError:
@@ -269,12 +278,13 @@ def get_game(token):
         game.fold_num = row[6]
         game.winner = row[7]
         game.started = row[8]
-        game.finished = row[9]
-        game.ongoing_players = pickle.loads(row[10])
-        game.player_names = pickle.loads(row[11])
-        game.finished_players = pickle.loads(row[12])
-        game.player_cards = pickle.loads(row[13])
-        game.player_comps = pickle.loads(row[14])
+        game.paused = row[9]
+        game.finished = row[10]
+        game.ongoing_players = pickle.loads(row[11])
+        game.player_names = pickle.loads(row[12])
+        game.finished_players = pickle.loads(row[13])
+        game.player_cards = pickle.loads(row[14])
+        game.player_comps = pickle.loads(row[15])
         return game
 
 
@@ -287,11 +297,27 @@ def update_game(game):
     player_cards_blob = sqlite3.Binary(pickle.dumps(game.player_cards))
     player_comps_blob = sqlite3.Binary(pickle.dumps(game.player_comps))
     cursor.execute(
-        "UPDATE games SET level = ?, token = ?, expiration_time = ?, current_player = ?, prev_comp = ?, fold_num = ?, winner = ?, started = ?, finished = ?, ongoing_players = ?, player_names = ?, finished_players = ?, player_cards = ?, player_comps = ? WHERE token = ?",
+        "UPDATE games SET level = ?, token = ?, expiration_time = ?, current_player = ?, prev_comp = ?, fold_num = ?, winner = ?, started = ?, paused = ?, finished = ?, ongoing_players = ?, player_names = ?, finished_players = ?, player_cards = ?, player_comps = ? WHERE token = ?",
         (game.level, game.token, game.expiration_time.strftime("%Y-%m-%d %H:%M:%S"), game.current_player, prev_comp_blob, game.fold_num,
-         game.winner, game.started, game.finished, ongoing_players_blob, player_names_blob, finished_players_blob, player_cards_blob, player_comps_blob, game.token),
+         game.winner, game.started, game.paused, game.finished, ongoing_players_blob, player_names_blob, finished_players_blob, player_cards_blob, player_comps_blob, game.token),
     )
     conn.commit()
+
+@app.route('/end_game/<token>', methods=['POST'])
+@cross_origin()
+def end_game(token):
+    print(token)
+    n_game = cursor.execute("select count(token) from games where token = ?", (token, ))
+    n_game = cursor.fetchone()[0]
+    print("===============\n", n_game)
+    if int(n_game) > 0:
+        cursor.execute(
+        "UPDATE games SET paused = ? WHERE token = ?",
+        (1, token))
+        conn.commit()
+        return jsonify({"token": token}), 200
+    else:
+        return jsonify({"error": "No game with token" + token}), 400
 
 
 def check_game_room_expiration():
