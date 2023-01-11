@@ -11,19 +11,20 @@ import axios from 'axios'
 <template>
   <div class="container">
     <div class="canvas">
+      <img ref="pokerImg" :style="{display: 'none'}" src='@/assets/deck.svg' />
       <canvas ref="canvas" width="2000" height="550" @click="onCanvasClick"></canvas>
     </div>
     <n-modal
-      v-model:show="this.throwError"
+      v-model:show="throwError"
       :mask-closable="false"
       preset="dialog"
       title="Unable to throw"
-      :content="this.throwErrorContent"
+      :content="throwErrorContent"
       positive-text="Got it"
-      @positive-click="this.throwError = false"
+      @positive-click="throwError = false"
     />
     <n-modal
-      v-model:show="this.finished"
+      v-model:show="finished"
       :mask-closable="false"
     >
       <n-card
@@ -38,7 +39,7 @@ import axios from 'axios'
           <n-icon size="25" color="#0e7a0d">
             <Trophy16Filled />
           </n-icon>
-          Your rank: {{ this.rank }}
+          Your rank: {{ rank }}
         </n-space>
         <template #footer>
           <n-button type="primary" @click="returnToIndex">
@@ -50,7 +51,7 @@ import axios from 'axios'
     <div class="form">
       <n-space vertical>
       <n-alert v-if="showWarning" :title="alertTitle" :type="alertType">
-        {{ this.alertContent }}..
+        {{ alertContent }}..
       </n-alert>
       <n-space v-else align="center">
         <n-button strong secondary type="success" size="large" @click="throw_cards">
@@ -60,11 +61,11 @@ import axios from 'axios'
               <fist-raised v-else/>
             </n-icon>
           </template>
-          {{ this.selectSomething ? 'Throw' : 'Pass'}}
+          {{ selectSomething ? 'Throw' : 'Pass'}}
         </n-button>
       </n-space>
       <n-button strong type="warning" @click="end_game">
-            Quit (Return with token {{ this.token }})
+            Quit (Return with token {{ token }})
         </n-button>
       </n-space>
     </div>
@@ -160,7 +161,8 @@ export default {
       rank: -1,
       throwError: false,
       throwErrorContent: '',
-      intervalId : null 
+      intervalId : null,
+      firstLoad: true
     }
   },
   methods: {
@@ -184,8 +186,7 @@ export default {
     redraw_canvas() {
       const canvas = this.$refs.canvas
       const ctx = canvas.getContext('2d')
-      const image = new Image()
-      image.src = 'src/assets/deck.svg'
+      const image = this.$refs.pokerImg
 
       function draw_deck() {
         // Clear the canvas
@@ -316,7 +317,13 @@ export default {
       }
 
       draw_deck = draw_deck.bind(this)
-      image.onload = () => {
+      console.log('draw_deck')
+      if (this.firstLoad) {
+        image.onload = () => {
+          draw_deck()
+          this.firstLoad = false
+        }
+      } else {
         draw_deck()
       }
 
@@ -475,6 +482,7 @@ export default {
           this.alertTitle = 'Unable to throw'
           this.alertContent = 'It\'s not your turn yet'
           this.deck = game.deck
+          console.log(this.deck)
           this.comp = game.player_comp
           this.turn = game.turn
           this.started = game.started

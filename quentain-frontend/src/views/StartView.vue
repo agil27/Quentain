@@ -105,7 +105,7 @@ export default {
         <n-switch v-model:value="experimental" />
       </n-space>
       <n-alert v-if="failJoin" title="Error" type="error">
-        Fail to join game: {{ this.failError }}
+        Fail to join game: {{ failError }}
       </n-alert>
     </n-space>
     <template #action>
