@@ -10,6 +10,11 @@ import axios from 'axios'
 
 <template>
   <div class="container">
+    <div class="token">Room token: {{this.token}}</div>
+    <button class="button" @click="end_game">
+        End Game
+    </button>
+
     <div class="canvas">
       <canvas ref="canvas" width="2000" height="550"></canvas>
     </div>
@@ -133,6 +138,7 @@ export default {
       alertContent: 'Waiting for others to join...',
       started: 0,
       finished: false,
+      paused: 0,
       game: null,
       comp_pos : [
         {x: 320, y: 230},
@@ -339,6 +345,16 @@ export default {
         })
       }
     },
+    async end_game() {
+      try {
+        const response = await axios.post('http://localhost:5050/end_game/' + this.token,
+                        {token:this.token});               
+        this.endGame = true;
+        this.$emit('endGame');
+      } catch (error) {
+        console.error(error);
+      }
+    },
     get_visual_idx(idx) {
       return (idx + 4 - this.player_id) % 4
     }
@@ -363,7 +379,7 @@ export default {
   watch: {
     turn: {
       handler() {
-        if (!this.finished && (this.turn !== this.player_id || !this.started)) {
+        if (!this.finished && (this.turn !== this.player_id || !this.started) && this.paused==0) {
           if (this.started) {
             this.alertTitle = 'Unable to throw'
             this.alertContent = 'It\'s not your turn yet'
@@ -378,6 +394,8 @@ export default {
                 this.rank = game.rank[this.player_id]
               }
               if (game.started !== this.started) {
+                this.alertTitle = 'Unable to throw'
+                this.alertContent = 'It\'s not your turn yet'
                 this.deck = game.deck
                 this.comp = game.player_comp
                 this.turn = game.turn
@@ -386,7 +404,11 @@ export default {
                   this.playerFinished[id] = true
                 })
                 this.redraw_canvas()
-              } else if (game.turn !== this.turn) {
+              }else if (game.paused != this.paused){
+                  console.log("exit")
+                  this.paused = 1
+                  this.end_game()
+              }else if (game.turn !== this.turn) {
                 this.comp = game.player_comp
                 this.turn = game.turn
                 game.finished_players.forEach(id => {
