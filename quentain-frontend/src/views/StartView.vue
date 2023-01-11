@@ -10,18 +10,18 @@ import axios from 'axios'
 export default {
   data() {
     return {
-      joinGame: false,
+      whetherJoin: false,
       level: 2,
       token: '',
       player_id: -1,
       failError: '',
       experimental: false,
-      server: 'http://localhost:5050'
+      server: 'https://quentain-server.onrender.com'
     }
   },
   methods: {
     toggle() {
-      this.joinGame = !this.joinGame
+      this.whetherJoin = !this.whetherJoin
     },
     async generate_token() {
       try {
@@ -29,7 +29,7 @@ export default {
           level: parseInt(this.level),
           experimental: this.experimental
         })
-        this.joinGame = true;
+        this.whetherJoin = true;
         this.token = response.data.token
         this.failError = ''
       } catch (error) {
@@ -53,7 +53,7 @@ export default {
   },
   computed: {
     title() {
-      return this.joinGame ? 'Join a game' : 'Start a new game'
+      return this.whetherJoin ? 'Join a game' : 'Start a new game'
     },
     failJoin() {
       return this.failError !== ""
@@ -64,7 +64,7 @@ export default {
 
 <template>
 
-  <n-card style="margin-left: 35%" size="huge" hoverable
+  <n-card style="margin-left: 35%" size="large" hoverable
     :title="title"
     :segmented="{
       content: true,
@@ -72,7 +72,7 @@ export default {
     }"
   >
     <template #header-extra>
-      <n-button v-if="joinGame" @click="toggle" text>
+      <n-button v-if="whetherJoin" @click="toggle" text>
         Start a new game 
       </n-button>
       <n-button v-else @click="toggle" text>
@@ -80,18 +80,16 @@ export default {
       </n-button>
     </template>
     <n-space vertical>
-      <n-space>
-        {{ this.joinGame ? 'Please enter server address and a token number to join a game room' : 'Please enter server address and level number to generate a game token' }}
-        <n-icon size="25" color="#0e7a0d">
-          <game-controller />
-        </n-icon>
-      </n-space>
+        <n-space>
+          {{ whetherJoin ? 'Please enter server address and a token number to join a game room' : 'Please enter server address and level number to generate a game token' }}
+          <n-icon size="25" color="#0e7a0d" :component="GameController"/>
+        </n-space>
       <n-input v-model:value="server" placeholder="server IP address">
         <template #prefix>
           <n-icon :component="Server24Filled" />
         </template>
       </n-input>
-      <n-input v-if='joinGame' v-model:value="token" placeholder="Input room token">
+      <n-input v-if='whetherJoin' v-model:value="token" placeholder="Input room token">
         <template #prefix>
             <n-icon :component="TokenFilled" />
         </template>
@@ -102,7 +100,7 @@ export default {
           <n-icon :component="DocumentPageNumber24Filled" />
         </template>
       </n-input-number>
-      <n-space v-if='!joinGame'>
+      <n-space v-if='!whetherJoin'>
         Experimental Mode (4 cards)
         <n-switch v-model:value="experimental" />
       </n-space>
@@ -111,7 +109,7 @@ export default {
       </n-alert>
     </n-space>
     <template #action>
-      <n-button v-if="joinGame" type="primary" @click="join_game">
+      <n-button v-if="whetherJoin" type="primary" @click="join_game">
         Join Now!
       </n-button>
       <n-button v-else type="primary" @click="generate_token">
