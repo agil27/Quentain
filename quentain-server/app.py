@@ -309,7 +309,6 @@ def end_game(token):
     print(token)
     n_game = cursor.execute("select count(token) from games where token = ?", (token, ))
     n_game = cursor.fetchone()[0]
-    print("===============\n", n_game)
     if int(n_game) > 0:
         cursor.execute(
         "UPDATE games SET paused = ? WHERE token = ?",

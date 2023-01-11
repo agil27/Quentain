@@ -4,6 +4,7 @@ import { GameControllerOutline, GameController } from '@vicons/ionicons5'
 import { TokenFilled } from '@vicons/material'
 import { Server24Filled, DocumentPageNumber24Filled} from '@vicons/fluent'
 import axios from 'axios'
+import config from '../../config'
 </script>
 
 <script>
@@ -16,7 +17,7 @@ export default {
       player_id: -1,
       failError: '',
       experimental: false,
-      server: 'https://quentain-server.onrender.com'
+      server: config.serverPath
     }
   },
   methods: {
