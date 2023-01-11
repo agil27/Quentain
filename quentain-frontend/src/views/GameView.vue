@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import 'vfonts/FiraSans.css'
 import 'vfonts/FiraCode.css'
 import { NButton, NSpace, NIcon, NAlert, NCard, NModal} from 'naive-ui'
@@ -71,7 +71,7 @@ import axios from 'axios'
   </div>
 </template>
 
-<script lang="ts">
+<script>
 const card_width = 202.5
 const card_height = 315
 const draw_width = 64
@@ -113,11 +113,6 @@ function get_location(color, number) {
 }
 
 export default {
-  components: {
-    NButton, NSpace, NIcon, NAlert, NCard, NModal, 
-    FistRaised, PlayCard, Trophy16Filled
-  },
-  name: 'game-view',
   props: {
     token: {
       type: String,

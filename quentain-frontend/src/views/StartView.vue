@@ -1,24 +1,13 @@
-<script setup lang="ts">
-import { useNotification, useMessage, NButton, NCard, NIcon, NAlert, NSpace, NInput, NInputNumber, NSwitch} from 'naive-ui'
+<script setup>
+import { NButton, NCard, NIcon, NAlert, NSpace, NInput, NInputNumber, NSwitch} from 'naive-ui'
 import { GameControllerOutline, GameController } from '@vicons/ionicons5'
 import { TokenFilled } from '@vicons/material'
 import { Server24Filled, DocumentPageNumber24Filled} from '@vicons/fluent'
 import axios from 'axios'
 </script>
 
-<script lang='ts'>
-
-function notify(type, info) {
-  notification[type]({
-    content: info,
-    meta: "error",
-    duration: 2500,
-    keepAliveOnHover: true
-  })
-}
-
+<script>
 export default {
-  name: 'start-view',
   data() {
     return {
       joinGame: false,
