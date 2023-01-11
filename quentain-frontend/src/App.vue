@@ -19,7 +19,7 @@ import 'vfonts/FiraCode.css'
     </ul>
   </nav>
   <start-view ref="startView" v-if="!inGame" @joinGame="join_game"/>
-  <game-view ref="gameView" v-else :player_id="player_id" :token="token" @endGame="end_game" @retunIndex="returnIndex"/>
+  <game-view ref="gameView" v-else :player_id="player_id" :token="token" @endGame="end_game" @returnIndex="return_index"/>
 </div>
 </template>
 

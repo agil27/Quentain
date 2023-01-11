@@ -469,6 +469,8 @@ export default {
           this.rank = game.rank[this.player_id]
         }
         if (game.started !== this.started) {
+          this.alertTitle = 'Unable to throw'
+          this.alertContent = 'It\'s not your turn yet'
           this.deck = game.deck
           this.comp = game.player_comp
           this.turn = game.turn
