@@ -2,6 +2,7 @@
 import { useNotification, useMessage, NButton, NCard, NIcon, NAlert, NSpace, NInput, NInputNumber, NSwitch} from 'naive-ui'
 import { GameControllerOutline, GameController } from '@vicons/ionicons5'
 import { TokenFilled } from '@vicons/material'
+import { Server24Filled, DocumentPageNumber24Filled} from '@vicons/fluent'
 import axios from 'axios'
 </script>
 
@@ -17,6 +18,7 @@ function notify(type, info) {
 }
 
 export default {
+  name: 'start-view',
   data() {
     return {
       joinGame: false,
@@ -24,7 +26,8 @@ export default {
       token: '',
       player_id: -1,
       failError: '',
-      experimental: false
+      experimental: false,
+      server: 'http://localhost:5050'
     }
   },
   methods: {
@@ -33,7 +36,7 @@ export default {
     },
     async generate_token() {
       try {
-        const response = await axios.post('http://localhost:5050/new_game', {
+        const response = await axios.post(this.server + '/new_game', {
           level: parseInt(this.level),
           experimental: this.experimental
         })
@@ -47,11 +50,11 @@ export default {
     },
     async join_game() {
       try {
-        const response = await axios.post('http://localhost:5050/join_game/' + this.token, {
+        const response = await axios.post(this.server + '/join_game/' + this.token, {
         })
         this.player_id = response.data.player_number
         console.log(this.player_id)
-        this.$emit('joinGame', this.player_id, this.token, this.experimental)
+        this.$emit('joinGame', this.player_id, this.token, this.server)
         this.failError = ''
       } catch (error) {
         console.log(error)
@@ -89,20 +92,25 @@ export default {
     </template>
     <n-space vertical>
       <n-space>
-        {{ this.joinGame ? 'Please enter a token number to join a game room' : 'Please click the button to generate a game token' }}
+        {{ this.joinGame ? 'Please enter server address and a token number to join a game room' : 'Please enter server address and level number to generate a game token' }}
         <n-icon size="25" color="#0e7a0d">
           <game-controller />
         </n-icon>
       </n-space>
-      <n-input v-if='joinGame' v-model:value="token" placeholder="Please enter a token">
+      <n-input v-model:value="server" placeholder="server IP address">
         <template #prefix>
-          <n-icon :component="TokenFilled" />
+          <n-icon :component="Server24Filled" />
+        </template>
+      </n-input>
+      <n-input v-if='joinGame' v-model:value="token" placeholder="Input room token">
+        <template #prefix>
+            <n-icon :component="TokenFilled" />
         </template>
       </n-input>
       <n-input-number v-else v-model:value='level' placeholder='Input level number (1-13)'
       :min="1" :max="13">
         <template #prefix>
-          <n-icon :component="TokenFilled" />
+          <n-icon :component="DocumentPageNumber24Filled" />
         </template>
       </n-input-number>
       <n-space v-if='!joinGame'>

@@ -113,6 +113,10 @@ function get_location(color, number) {
 }
 
 export default {
+  components: {
+    NButton, NSpace, NIcon, NAlert, NCard, NModal, 
+    FistRaised, PlayCard, Trophy16Filled
+  },
   name: 'game-view',
   props: {
     token: {
@@ -122,6 +126,10 @@ export default {
     player_id: {
       type: Number,
       required: true
+    },
+    server: {
+      type: String,
+      default: 'http://localhost:5050'
     }
   },
   data() {
@@ -345,7 +353,7 @@ export default {
             }
           })
         }
-        axios.post('http://localhost:5050/throw_comp/' + this.token, {
+        axios.post(this.server + '/throw_comp/' + this.token, {
           player_number: this.player_id,
           choices: choices
         }).then(response => {
@@ -362,7 +370,7 @@ export default {
     },
     async end_game() {
       try {
-        const response = await axios.post('http://localhost:5050/end_game/' + this.token,
+        const response = await axios.post(this.server + '/end_game/' + this.token,
                         {token:this.token});               
         this.endGame = true;
         this.$emit('endGame');
@@ -461,7 +469,7 @@ export default {
     this.redraw_canvas()
     this.intervalId = setInterval(() => {
       axios.get(
-        'http://localhost:5050/get_player_game_state/' + this.token + '/' + this.player_id
+        this.server + '/get_player_game_state/' + this.token + '/' + this.player_id
       ).then(response => {
         let game = response.data
         this.finished = game.finished
