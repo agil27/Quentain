@@ -431,9 +431,6 @@ export default {
       })
       return flag
     }
-    intervalCleared() {
-      return !this.intervalId;
-    },
   },
   watch: {
     turn: {

@@ -4,6 +4,7 @@ import { GameControllerOutline, GameController } from '@vicons/ionicons5'
 import { TokenFilled } from '@vicons/material'
 import { Server24Filled, DocumentPageNumber24Filled} from '@vicons/fluent'
 import axios from 'axios'
+import config from '../../config'
 </script>
 
 <script>

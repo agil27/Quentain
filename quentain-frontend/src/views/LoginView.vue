@@ -57,44 +57,7 @@
       </template>
     </n-card>
   </form>
-    <!-- <div>
-      <div v-if="!loggedIn">
-        <h2>Login</h2>
-        <form @submit.prevent="login">
-          <label>
-            Username:
-            <input type="username" v-model="username" />
-          </label>
-          <br />
-          <label>
-            Password:
-            <input type="password" v-model="password" />
-          </label>
-          <br />
-          <button type="submit">Login</button>
-        </form>
-        <br />
-        <h2>Register</h2>
-        <form @submit.prevent="register">
-          <label>
-            Username:
-            <input type="username" v-model="username" />
-          </label>
-          <br />
-          <label>
-            Password:
-            <input type="password" v-model="password" />
-          </label>
-          <br />
-          <button type="submit">Register</button>
-        </form>
-      </div>
-      <div v-else>
-        <p>You are logged in!</p>
-        <button @click="logout">Logout</button>
-      </div>
-    </div> -->
-  </template>
+</template>
 
 <script setup>
 import { NButton, NCard, NIcon, NAlert, NSpace, NInput, NInputNumber, NSwitch} from 'naive-ui'
@@ -102,44 +65,8 @@ import { GameControllerOutline, GameController } from '@vicons/ionicons5'
 import { TokenFilled } from '@vicons/material'
 import { Server24Filled, DocumentPageNumber24Filled} from '@vicons/fluent'
 import axios from 'axios'
+import config from '../../config'
 </script>
-
-  <!-- <script>
-  import axios from 'axios';
-  
-  export default {
-    data() {
-      return {
-        username: '',
-        password: '',
-        loggedIn: false,
-      };
-    },
-    methods: {
-      async login() {
-        try {
-          await axios.post('/login', { username: this.username, password: this.password });
-          this.loggedIn = true;
-          this.$emit('loggedIn', this.username)
-        } catch (error) {
-          console.error(error);
-        }
-      },
-      async register() {
-        try {
-          await axios.post('/register', { username: this.username, password: this.password });
-          this.loggedIn = true;
-          this.$emit('loggedIn', this.username)
-        } catch (error) {
-          console.error(error);
-        }
-      },
-      logout() {
-        this.loggedIn = false;
-      },
-    },
-  };
-  </script> -->
 
 
 <script>
@@ -152,8 +79,7 @@ export default {
       confirmation: '',
       loggedIn: false,
       failError: '',
-      // server: 'https://quentain-server.onrender.com'
-      server: 'http://127.0.0.1:5050'
+      server: config.serverPath,
     }
   },
   methods: {

@@ -80,7 +80,6 @@ cursor.execute('''
 conn.commit()
 cursor.close()
 
-
 @app.route('/new_series', methods=['POST'])
 @cross_origin()
 @limiter.limit("10 per minute")
@@ -143,12 +142,14 @@ def join_game(token):
     # Resume game
     paused_game = get_paused_game(username)
     if paused_game!=None and token in paused_game:
+        cursor = conn.cursor()
         paused_game.remove(token)
         paused_game = pickle.dumps(paused_game)
         game.paused = 0
         cursor.execute("UPDATE users SET paused_game = ? WHERE name = ?", (paused_game, username))     
         cursor.execute("UPDATE games SET paused = ? where token=?", (game.paused, token))
         conn.commit()
+        cursor.close()
         return jsonify({"player_number": [game.player_names[i] for i in game.player_names].index(username)}), 200
 
     # Join new game
@@ -440,6 +441,7 @@ def update_game(game):
 @app.route('/end_game/<token>', methods=['POST'])
 @cross_origin()
 def end_game(token):
+    cursor = conn.cursor()
     data = request.get_json()
     username = data["username"]
     paused_game = get_paused_game(username)
@@ -495,6 +497,7 @@ def register():
         return jsonify({"error": "Must provide username"}), 400
 
     # Ensure username has not existed
+    cursor = conn.cursor()
     rows = cursor.execute("SELECT * FROM users WHERE name=?", (username,))
     rows = cursor.fetchall()
     if len(rows) > 0:
@@ -516,6 +519,7 @@ def register():
     (username, generate_password_hash(password), paused_game) )
     
     conn.commit()
+    conn.close()
 
     # direct to profile page
     return  jsonify({"username": username}), 200
@@ -539,8 +543,10 @@ def login():
         return jsonify({"error": "Must provide password"}), 400
 
     # Query database for username
+    cursor = conn.cursor()
     rows = cursor.execute("SELECT * FROM users WHERE name = ?", (username,))
     rows = rows.fetchall()
+    conn.close()
 
     # Ensure username exists and password is correct
     if len(rows) != 1 or not check_password_hash(rows[0][2], password):
