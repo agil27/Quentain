@@ -16,7 +16,14 @@ export default {
       player_id: -1,
       failError: '',
       experimental: false,
-      server: 'https://quentain-server.onrender.com'
+      // server: 'https://quentain-server.onrender.com'
+      server: 'http://127.0.0.1:5050',
+    }
+  },
+  props: {
+    username: {
+      type: String,
+      default: ''
     }
   },
   methods: {
@@ -39,8 +46,8 @@ export default {
     },
     async join_game() {
       try {
-        const response = await axios.post(this.server + '/join_game/' + this.token, {
-        })
+        const response = await axios.post(this.server + '/join_game/' + this.token, 
+          {username: this.$props.username, token:this.token})
         this.player_id = response.data.player_number
         console.log(this.player_id)
         this.$emit('joinGame', this.player_id, this.token, this.server)
@@ -58,7 +65,7 @@ export default {
     failJoin() {
       return this.failError !== ""
     }
-  }
+  },
 }
 </script>
 

@@ -6,6 +6,12 @@ import names
 import random
 import datetime
 
+class Player:
+    '''
+    A player
+    '''
+    def __init__(self, name):
+        self.name = name
 
 class Game:
     '''

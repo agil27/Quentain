@@ -64,9 +64,9 @@ import axios from 'axios'
           {{ selectSomething ? 'Throw' : 'Pass'}}
         </n-button>
       </n-space>
-      <n-button strong type="warning" @click="end_game">
+      <n-button type="primary" @click="end_game">
             Quit (Return with token {{ token }})
-        </n-button>
+      </n-button>
       </n-space>
     </div>
   </div>
@@ -126,10 +126,15 @@ export default {
     server: {
       type: String,
       default: 'http://localhost:5050'
+    },
+    username: {
+      type: String,
+      default: ''
     }
   },
   data() {
     return {
+      // username: this.$parent.username,
       deck: Array.from(
         {length: 28},
         () => ({ color: 'Cover', number: 17, selected: false})
@@ -370,20 +375,23 @@ export default {
         })
       }
     },
-    async end_game() {
+    end_game() {
+      // console.log("HERE", this.intervalCleared)
       try {
-        const response = await axios.post(this.server + '/end_game/' + this.token,
-                        {token:this.token});               
-        this.endGame = true;
-        this.$emit('endGame');
+        axios.post(this.server + '/end_game/' + this.token,
+                        {token:this.token, username: this.username})
+        this.paused = 1
+        this.reset()
+        this.$emit('endGame')
       } catch (error) {
-        console.error(error);
+        console.log(error);
       }
     },
     get_visual_idx(idx) {
       return (idx + 4 - this.player_id) % 4
     },
     reset() {
+      console.log(this.intervalId)
       clearInterval(this.intervalId)
       this.deck = Array.from(
         {length: 28},
@@ -421,7 +429,10 @@ export default {
         }
       })
       return flag
-    }
+    },
+    intervalCleared() {
+      return !this.intervalId;
+    },
   },
   watch: {
     turn: {
@@ -490,7 +501,10 @@ export default {
             this.playerFinished[id] = true
           })
           this.redraw_canvas()
-        } else if (game.turn !== this.turn) {
+        } else if (game.paused !== this.paused){
+          this.paused = game.paused
+          this.end_game()
+        }else if (game.turn !== this.turn) {
           this.comp = game.player_comp
           this.turn = game.turn
           game.finished_players.forEach(id => {

@@ -1,8 +1,10 @@
 <script setup>
+import LoginView from './views/LoginView.vue'
 import StartView from './views/StartView.vue'
 import GameView from './views/GameView.vue'
 import 'vfonts/FiraSans.css'
 import 'vfonts/FiraCode.css'
+import { NButton} from 'naive-ui'
 </script>
 
 <template>
@@ -16,21 +18,25 @@ import 'vfonts/FiraCode.css'
       <li>
         <a :class="{selected: !inGame}" to="/">Join a game</a>
         <a :class="{selected: inGame}" to="/game">Game Room</a>
+        <n-button v-if="loggedIn" @click="log_out">Log out</n-button >
       </li>
     </ul>
   </nav>
-  <StartView v-if="!inGame" @joinGame="join_game"/>
-  <GameView v-else :player_id="player_id" :token="token" :server="gameServer" @endGame="end_game" @returnIndex="return_index"/>
+  <LoginView v-if="!loggedIn" @loggedIn="log_in" @loggedOut="log_out"/>
+  <StartView v-else-if="!inGame" @joinGame="join_game" :username="username"/>
+  <GameView v-else :player_id="player_id" :token="token" :server="gameServer" :username="username" @endGame="end_game" @returnIndex="return_index"/>
 </div>
 </template>
 
 <script>
 export default {
   components: {
-    StartView, GameView
+    LoginView, StartView, GameView
   },
   data() {
     return {
+      loggedIn: false,
+      username: '',
       inGame: false,
       player_id: -1,
       token: '',
@@ -53,6 +59,14 @@ export default {
       this.inGame = false
       this.token = ''
       this.player_id = -1
+    },
+    log_in(username){
+      this.loggedIn = true
+      this.username = username
+    },
+    log_out(){
+      this.loggedIn = false
+      this.username = ''
     }
   }
 }

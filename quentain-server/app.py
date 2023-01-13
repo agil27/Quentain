@@ -3,6 +3,7 @@ from flask_caching import Cache
 from flask_cors import CORS, cross_origin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.security import check_password_hash, generate_password_hash
 
 import datetime
 import pickle
@@ -50,6 +51,16 @@ cursor.execute('''
         player_comps BLOB NOT NULL
     )
 ''')
+
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        hash TEXT NOT NULL,
+        paused_game BLOB NOT NULL
+    )
+''')
+
 conn.commit()
 
 
@@ -83,18 +94,45 @@ def add_player_to_game(game, player_name=''):
     return number
 
 
+def get_paused_game(username):
+    cursor.execute('''SELECT * FROM users WHERE name = ? ''', (username,))
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    else:
+        paused_game = pickle.loads(row[3])
+        return paused_game
+
 @app.route('/join_game/<token>', methods=['POST'])
 @cross_origin()
 def join_game(token):
+    post_data = request.get_json()
+    print(post_data)
+    username = post_data["username"]
+
     # Validate the token
     game = get_game(token)
     if game is None:
         return jsonify({'reason': "Game not found"}), 404
     if game.token != token:
         return jsonify({'reason': "Invalid token"}), 401
+    if game.finished:
+        return jsonify({'reason': "Game has ended"}), 404
 
+    # Resume game
+    paused_game = get_paused_game(username)
+    if paused_game!=None and token in paused_game:
+        paused_game.remove(token)
+        paused_game = pickle.dumps(paused_game)
+        game.paused = 0
+        cursor.execute("UPDATE users SET paused_game = ? WHERE name = ?", (paused_game, username))     
+        cursor.execute("UPDATE games SET paused = ? where token=?", (game.paused, token))
+        conn.commit()
+        return jsonify({"player_number": [game.player_names[i] for i in game.player_names].index(username)}), 200
+
+    # Join new game
     # Add the player to the game in the database
-    number = add_player_to_game(game)
+    number = add_player_to_game(game, player_name=username)
     if (number == 3):
         game.started = True
         update_game(game)
@@ -306,14 +344,19 @@ def update_game(game):
 @app.route('/end_game/<token>', methods=['POST'])
 @cross_origin()
 def end_game(token):
-    print(token)
+    data = request.get_json()
+    username = data["username"]
+    paused_game = get_paused_game(username)
     n_game = cursor.execute("select count(token) from games where token = ?", (token, ))
     n_game = cursor.fetchone()[0]
-    print("===============\n", n_game)
     if int(n_game) > 0:
         cursor.execute(
         "UPDATE games SET paused = ? WHERE token = ?",
         (1, token))
+
+        paused_game.append(token)
+        cursor.execute("UPDATE users SET paused_game = ? WHERE name = ?",
+        (pickle.dumps(paused_game), username))
         conn.commit()
         return jsonify({"token": token}), 200
     else:
@@ -334,6 +377,76 @@ def check_game_room_expiration():
     for row in rows:
         id = row[0]
         cursor.execute("DELETE FROM games WHERE id = ?", (id,))
+
+
+@app.route("/register", methods=["POST"])
+@cross_origin()
+def register():
+    """Register user"""
+    post_data = request.get_json()
+    username = post_data["username"]
+    password = post_data["password"]
+    confirmation = post_data["confirmation"]
+    paused_game = pickle.dumps([])
+
+    # Ensure username was submitted
+    if not username:
+        return jsonify({"error": "Must provide username"}), 400
+
+    # Ensure username has not existed
+    rows = cursor.execute("SELECT * FROM users WHERE name=?", (username,))
+    rows = cursor.fetchall()
+    if len(rows) > 0:
+        return jsonify({"error": "Username already exists"}), 400
+
+    # Ensure password was submitted
+    if not password:
+        return jsonify({"error": "Must provide password"}), 400
+
+    # Ensure confirmation password was submitted
+    if not confirmation:
+        return jsonify({"error": "Must provide confirmation of password"}), 400
+    # Ensure two passwrods match
+    if confirmation != password:
+        return jsonify({"error": "Passwords do not match"}), 400
+
+    # store the new user, add defalut highlight images
+    cursor.execute("INSERT INTO users (name, hash, paused_game) VALUES(?,?, ?)", 
+    (username, generate_password_hash(password), paused_game) )
+    
+    conn.commit()
+
+    # direct to profile page
+    return  jsonify({"username": username}), 200
+    
+
+@app.route("/login", methods=["POST"])
+@cross_origin()
+def login():
+    """Log user in"""
+
+    post_data = request.get_json()
+    username = post_data["username"]
+    password = post_data["password"]
+
+    # Ensure username was submitted
+    if not username:
+        return jsonify({"error": "Must provide username"}), 400
+
+     # Ensure password was submitted
+    if not password:
+        return jsonify({"error": "Must provide password"}), 400
+
+    # Query database for username
+    rows = cursor.execute("SELECT * FROM users WHERE name = ?", (username,))
+    rows = rows.fetchall()
+
+    # Ensure username exists and password is correct
+    if len(rows) != 1 or not check_password_hash(rows[0][2], password):
+        return jsonify({"error":"invalid username and/or password"}), 400
+
+    # Redirect user to home page
+    return jsonify({"username": username}), 200
 
 
 if __name__ == "__main__":
