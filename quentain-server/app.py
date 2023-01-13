@@ -33,22 +33,22 @@ cursor = conn.cursor()
 # Create the game_rooms table if it doesn't exist
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS games (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        level INTEGER NOT NULL,
-        token TEXT NOT NULL UNIQUE,
-        expiration_time DATETIME NOT NULL,
-        current_player INTEGER NOT NULL,
-        prev_comp BLOB,
-        fold_num INTEGER NOT NULL,
-        winner INTEGER,
-        started INTEGER NOT NULL,
-        paused INTEGER NOT NULL,
-        finished INTEGER NOT NULL,
-        ongoing_players BLOB NOT NULL,
-        player_names BLOB NOT NULL,
-        finished_players BLOB NOT NULL,
-        player_cards BLOB NOT NULL,
-        player_comps BLOB NOT NULL
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            level INTEGER NOT NULL,
+            token TEXT NOT NULL UNIQUE,
+            expiration_time DATETIME NOT NULL,
+            current_player INTEGER NOT NULL,
+            prev_comp BLOB,
+            fold_num INTEGER NOT NULL,
+            winner INTEGER,
+            started INTEGER NOT NULL,
+            paused INTEGER NOT NULL,
+            finished INTEGER NOT NULL,
+            ongoing_players BLOB NOT NULL,
+            player_names BLOB NOT NULL,
+            finished_players BLOB NOT NULL,
+            player_cards BLOB NOT NULL,
+            player_comps BLOB NOT NULL
     )
 ''')
 
@@ -61,16 +61,37 @@ cursor.execute('''
     )
 ''')
 
+
+# Create the game_series table if it doesn't exist
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS series (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            token TEXT NOT NULL UNIQUE,
+            player_names BLOB NOT NULL,
+            current_turn INTEGER NOT NULL,
+            levels BLOB NOT NULL,
+            started INTEGER NOT NULL,
+            game_tokens BLOB NOT NULL,
+            finished INTEGER NOT NULL,
+            winning_turn INTEGER NOT NULL
+    )
+''')
+
 conn.commit()
+cursor.close()
 
 
-def generate_token():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+@app.route('/new_series', methods=['POST'])
+@cross_origin()
+@limiter.limit("10 per minute")
+def new_series():
+    status = -1
 
 
 @app.route('/new_game', methods=['POST'])
 @cross_origin()
-@limiter.limit("10 per minute")  # Limit to 10 requests per minute, returns 429 if too many requests from a client
+# Limit to 10 requests per minute, returns 429 if too many requests from a client
+@limiter.limit("10 per minute")
 def new_game():
     status = -1
     while status != 0:
@@ -167,7 +188,7 @@ def get_game_state(token):
     game = get_game(token)
     if not game.finished:
         # Return the game state
-        return jsonify({"current_player": game.current_player, "started": game.started,"game_state": game.get_game_state(game.current_player)}), 200
+        return jsonify({"current_player": game.current_player, "started": game.started, "game_state": game.get_game_state(game.current_player)}), 200
     else:
         return jsonify({"finished": game.finished, "rank": game.get_rank_str()}), 200
 
@@ -215,7 +236,7 @@ def throw_cards(token):
     player_number = data.get('player_number')
     choices = data.get('choices')
     choices = [int(x) for x in choices]
-    
+
     game = get_game(token)
 
     if game.finished:
@@ -275,28 +296,98 @@ def store_game(game):
     player_cards_blob = sqlite3.Binary(pickle.dumps(game.player_cards))
     player_comps_blob = sqlite3.Binary(pickle.dumps(game.player_comps))
     try:
+        cursor = conn.cursor()
         # Insert the game into the table
         cursor.execute('''
             INSERT INTO games (level, token, expiration_time, current_player, prev_comp, fold_num, winner, started, paused, finished, ongoing_players, player_names, finished_players, player_cards, player_comps)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         ''', (
-            game.level, game.token, game.expiration_time.strftime("%Y-%m-%d %H:%M:%S"), game.current_player, prev_comp_blob,
+            game.level, game.token, game.expiration_time.strftime(
+                "%Y-%m-%d %H:%M:%S"), game.current_player, prev_comp_blob,
             game.fold_num, game.winner, game.started, game.paused, game.finished, ongoing_players_blob,
             player_names_blob, finished_players_blob, player_cards_blob, player_comps_blob
         ))
+        conn.commit()
+        cursor.close()
     except sqlite3.IntegrityError:
         return -1
-    conn.commit()
+
     return 0
 
-@cache.memoize(20) # cache for 20 seconds
+
+def get_series(token):
+    # Open the file in read binary mode
+    fetch_cursor.execute('''
+        SELECT * FROM series
+        WHERE token = ?
+    ''', (token,))
+    row = fetch_cursor.fetchone()
+
+    if row is None:
+        return None
+    else:
+        series = quentain.Series(
+            token=row[1]
+        )
+        series.player_names = pickle.loads(row[2])
+        series.current_turn = row[3]
+        series.levels = pickle.loads(row[4])
+        series.started = row[5]
+        if series.started:
+            series.current_game = get_game(token=token)
+        series.game_tokens = pickle.loads(row[6])
+        series.finished = row[7]
+        series.winning_turn = row[8]
+
+
+def update_series(series):
+    player_names_blob = sqlite3.Binary(pickle.dumps(series.player_names))
+    levels_blob = sqlite3.Binary(pickle.dumps(series.finished_players))
+    game_tokens_blob = sqlite3.Binary(pickle.dumps(series.prev_comp))
+
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE games SET token = ?, player_names = ?, current_turn = ?, levels = ?, started = ?, game_tokens = ?, finished = ?, winning_turn = ? WHERE token = ?",
+        (series.token, player_names_blob, series.current_turn, levels_blob, series.started,
+         game_tokens_blob, series.finished, series.winning_turn, series.token),
+    )
+    conn.commit()
+    cursor.close()
+
+
+def store_series(series):
+    player_names_blob = sqlite3.Binary(pickle.dumps(series.player_names))
+    levels_blob = sqlite3.Binary(pickle.dumps(series.finished_players))
+    game_tokens_blob = sqlite3.Binary(pickle.dumps(series.prev_comp))
+    try:
+        cursor = conn.cursor()
+        # Insert the game into the table
+        cursor.execute('''
+            INSERT INTO series (token, player_names, current_turn, levels, started, game_tokens, finished, winning_turn)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        ''', (
+            series.token, player_names_blob, series.current_turn, levels_blob, series.started,
+            game_tokens_blob, series.finished, series.winning_turn))
+        conn.commit()
+        cursor.close()
+    except sqlite3.IntegrityError:
+        return -1
+
+    return 0
+
+
+fetch_cursor = conn.cursor()
+
+
+@cache.memoize(20)  # cache for 20 seconds
 def get_game(token):
     # Open the file in read binary mode
-    cursor.execute('''
+    fetch_cursor.execute('''
         SELECT * FROM games
         WHERE token = ?
     ''', (token,))
-    row = cursor.fetchone()
+    row = fetch_cursor.fetchone()
+
     if row is None:
         return None
     else:
@@ -307,9 +398,11 @@ def get_game(token):
         # Make sure that now is not a tuple
         if isinstance(row[3], tuple):
             # If now is a tuple, get the first element (which should be a datetime object)
-            game.expiration_time = datetime.datetime.strptime(row[3][0], "%Y-%m-%d %H:%M:%S")
+            game.expiration_time = datetime.datetime.strptime(
+                row[3][0], "%Y-%m-%d %H:%M:%S")
         else:
-            game.expiration_time = datetime.datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S")
+            game.expiration_time = datetime.datetime.strptime(
+                row[3], "%Y-%m-%d %H:%M:%S")
 
         game.current_player = row[4]
         game.prev_comp = pickle.loads(row[5])
@@ -334,12 +427,15 @@ def update_game(game):
     prev_comp_blob = sqlite3.Binary(pickle.dumps(game.prev_comp))
     player_cards_blob = sqlite3.Binary(pickle.dumps(game.player_cards))
     player_comps_blob = sqlite3.Binary(pickle.dumps(game.player_comps))
+    cursor = conn.cursor()
     cursor.execute(
         "UPDATE games SET level = ?, token = ?, expiration_time = ?, current_player = ?, prev_comp = ?, fold_num = ?, winner = ?, started = ?, paused = ?, finished = ?, ongoing_players = ?, player_names = ?, finished_players = ?, player_cards = ?, player_comps = ? WHERE token = ?",
         (game.level, game.token, game.expiration_time.strftime("%Y-%m-%d %H:%M:%S"), game.current_player, prev_comp_blob, game.fold_num,
          game.winner, game.started, game.paused, game.finished, ongoing_players_blob, player_names_blob, finished_players_blob, player_cards_blob, player_comps_blob, game.token),
     )
     conn.commit()
+    cursor.close()
+
 
 @app.route('/end_game/<token>', methods=['POST'])
 @cross_origin()
@@ -363,12 +459,17 @@ def end_game(token):
         return jsonify({"error": "No game with token" + token}), 400
 
 
-def check_game_room_expiration():
+def generate_token():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
+def check_game_room_expiration(cursor):
     # Get the current timestamp
     now = datetime.datetime.now()
 
     # Execute the SELECT statement to retrieve the games with expired expiration times
-    cursor.execute("SELECT * FROM games WHERE expiration_time < ?", (now.strftime("%Y-%m-%d %H:%M:%S"),))
+    cursor.execute("SELECT * FROM games WHERE expiration_time < ?",
+                   (now.strftime("%Y-%m-%d %H:%M:%S"),))
 
     # Retrieve the rows from the cursor
     rows = cursor.fetchall()
@@ -451,7 +552,7 @@ def login():
 
 if __name__ == "__main__":
     expiration_check_thread = threading.Thread(
-        target=check_game_room_expiration)
+        target=check_game_room_expiration, args=(conn.cursor(),))
     expiration_check_thread.daemon = True
     expiration_check_thread.start()
 

@@ -5,6 +5,7 @@ import GameView from './views/GameView.vue'
 import 'vfonts/FiraSans.css'
 import 'vfonts/FiraCode.css'
 import { NButton} from 'naive-ui'
+import config from '../config'
 </script>
 
 <template>
@@ -40,7 +41,7 @@ export default {
       inGame: false,
       player_id: -1,
       token: '',
-      gameServer: 'http://localhost:5050'
+      gameServer: config.serverPath
     }
   },
   methods: {

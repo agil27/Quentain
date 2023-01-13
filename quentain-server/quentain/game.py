@@ -16,6 +16,8 @@ class Player:
 class Game:
     '''
     A single game with a certain level value
+
+    If modify Game, then modify Game in ../quentain-service/models.py
     '''
 
     def __init__(self, level, first_player=0, experimental=False, token=''):

@@ -6,6 +6,7 @@ import { FistRaised } from '@vicons/fa'
 import { PlayCard } from '@vicons/tabler'
 import { Trophy16Filled } from '@vicons/fluent'
 import axios from 'axios'
+import config from '../../config'
 </script>
 
 <template>
@@ -429,7 +430,7 @@ export default {
         }
       })
       return flag
-    },
+    }
     intervalCleared() {
       return !this.intervalId;
     },

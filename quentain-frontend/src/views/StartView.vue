@@ -16,8 +16,7 @@ export default {
       player_id: -1,
       failError: '',
       experimental: false,
-      // server: 'https://quentain-server.onrender.com'
-      server: 'http://127.0.0.1:5050',
+      server: config.serverPath,
     }
   },
   props: {
