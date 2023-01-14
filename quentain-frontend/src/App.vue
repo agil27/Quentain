@@ -25,7 +25,7 @@ import config from '../config'
   </nav>
   <LoginView v-if="!loggedIn" @loggedIn="log_in" @loggedOut="log_out"/>
   <StartView v-else-if="!inGame" @joinGame="join_game" :username="username"/>
-  <GameView v-else :player_id="player_id" :token="token" :server="gameServer" :username="username" @endGame="end_game" @returnIndex="return_index"/>
+  <GameView v-else :player_id="player_id" :token="token" :server="gameServer" :username="username" @endGame="end_game" @returnIndex="return_index" ref="gameview"/>
 </div>
 </template>
 
@@ -68,6 +68,7 @@ export default {
     log_out(){
       this.loggedIn = false
       this.username = ''
+      clearInterval(this$refs.gameview.intervalId)
     }
   }
 }

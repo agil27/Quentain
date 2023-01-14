@@ -78,7 +78,7 @@ cursor.execute('''
 ''')
 
 conn.commit()
-cursor.close()
+# cursor.close()
 
 @app.route('/new_series', methods=['POST'])
 @cross_origin()
@@ -126,8 +126,8 @@ def get_paused_game(username):
 @app.route('/join_game/<token>', methods=['POST'])
 @cross_origin()
 def join_game(token):
+    cache.delete_memoized(get_game, token)
     post_data = request.get_json()
-    print(post_data)
     username = post_data["username"]
 
     # Validate the token
@@ -145,11 +145,11 @@ def join_game(token):
         cursor = conn.cursor()
         paused_game.remove(token)
         paused_game = pickle.dumps(paused_game)
-        game.paused = 0
         cursor.execute("UPDATE users SET paused_game = ? WHERE name = ?", (paused_game, username))     
-        cursor.execute("UPDATE games SET paused = ? where token=?", (game.paused, token))
+        cursor.execute("UPDATE games SET paused = ? where token=?", (0, token))
         conn.commit()
-        cursor.close()
+        cache.delete_memoized(get_game, token)
+        # cursor.close()
         return jsonify({"player_number": [game.player_names[i] for i in game.player_names].index(username)}), 200
 
     # Join new game
@@ -388,7 +388,6 @@ def get_game(token):
         WHERE token = ?
     ''', (token,))
     row = fetch_cursor.fetchone()
-
     if row is None:
         return None
     else:
@@ -519,7 +518,7 @@ def register():
     (username, generate_password_hash(password), paused_game) )
     
     conn.commit()
-    conn.close()
+    # conn.close()
 
     # direct to profile page
     return  jsonify({"username": username}), 200
@@ -546,7 +545,7 @@ def login():
     cursor = conn.cursor()
     rows = cursor.execute("SELECT * FROM users WHERE name = ?", (username,))
     rows = rows.fetchall()
-    conn.close()
+    # conn.close()
 
     # Ensure username exists and password is correct
     if len(rows) != 1 or not check_password_hash(rows[0][2], password):

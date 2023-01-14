@@ -483,6 +483,8 @@ export default {
         this.server + '/get_player_game_state/' + this.token + '/' + this.player_id
       ).then(response => {
         let game = response.data
+        console.log("Game pause: ", game.paused)
+        console.log("This paused: ", this.paused)
         this.finished = game.finished
         if (game.finished) {
           this.rank = game.rank[this.player_id]
@@ -499,9 +501,12 @@ export default {
             this.playerFinished[id] = true
           })
           this.redraw_canvas()
-        } else if (game.paused !== this.paused){
+        } else if (game.paused===1 && this.paused===0){
           this.paused = game.paused
           this.end_game()
+        } else if (game.paused===0 && this.paused===1){
+          this.paused = game.paused
+          this.redraw_canvas()
         }else if (game.turn !== this.turn) {
           this.comp = game.player_comp
           this.turn = game.turn
